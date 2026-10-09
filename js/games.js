@@ -20,9 +20,62 @@
  *     g.onDrag(fn)            指を動かしているあいだ fn({x, y, w, h})
  *     g.onSwipe(fn, {tapSides})  左右のスワイプで fn("left" | "right")（←→キーでも反応）
  *                                tapSides: true なら、画面の左半分／右半分のタップでも反応
+ *     g.onFlick(fn)           上下左右のスワイプで fn("up" | "down" | "left" | "right")（矢印キーでも反応）
  *     g.onKey(fn)             キー操作 fn(key, "down" | "up")
  * ゲームが終わると、タイマーや操作の受付はすべて自動で止まります。
  */
+
+// ---------- ゲームで使う小物 ----------
+
+// 3択などのボタン列。answer が正解、wrongs がまちがいの選択肢
+function gChoiceRow(g, answer, wrongs) {
+  const options = [answer, ...wrongs];
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [options[i], options[j]] = [options[j], options[i]];
+  }
+  const row = g.el("div", "g-choices");
+  for (const v of options) {
+    const b = g.el("div", "g-choice", String(v));
+    b.dataset.v = String(v);
+    row.append(b);
+  }
+  return row;
+}
+
+// 正解の近くの、まちがいの数を count 個つくる
+function gNearWrongs(answer, count, spread) {
+  const set = new Set();
+  for (let tries = 0; set.size < count && tries < 100; tries++) {
+    const d = (1 + Math.floor(Math.random() * spread)) * (Math.random() < 0.5 ? -1 : 1);
+    if (answer + d > 0) set.add(answer + d);
+  }
+  return [...set];
+}
+
+// 選択肢をタップしたときの判定。canAnswer() が false のあいだは受け付けない
+function gOnChoice(g, row, answer, canAnswer = () => true) {
+  g.onTap(({ target }) => {
+    const b = target && target.closest && target.closest(".g-choice");
+    if (!b || !row.contains(b) || !canAnswer()) return;
+    const ok = b.dataset.v === String(answer);
+    b.classList.add(ok ? "is-right" : "is-wrong");
+    if (ok) {
+      g.win();
+    } else {
+      const right = [...row.children].find((c) => c.dataset.v === String(answer));
+      if (right) right.classList.add("is-right");
+      g.lose();
+    }
+  });
+}
+
+// SVGの要素を作る
+function gSvg(tag, attrs) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, String(v));
+  return node;
+}
 
 const GAMES = [
   {
@@ -607,6 +660,452 @@ const GAMES = [
         },
         { tapSides: true }
       );
+    },
+  },
+  {
+    id: "flick",
+    title: "フリック",
+    theme: "sky",
+    timeout: "lose",
+    instruction: (lv) => `矢印の向きに${3 + Math.floor(lv / 2)}回はじけ！`,
+    setup(g) {
+      const total = 3 + Math.floor(g.level / 2);
+      const ARROWS = { up: "↑", down: "↓", left: "←", right: "→" };
+      const dirs = Object.keys(ARROWS);
+      let done = 0;
+      let current = null;
+      const counter = g.el("p", "g-note g-top", `のこり ${total}`);
+      const tile = g.el("div", "g-flick");
+      g.stage.append(counter, tile);
+      const next = () => {
+        let d;
+        do d = dirs[Math.floor(Math.random() * dirs.length)];
+        while (d === current);
+        current = d;
+        tile.textContent = ARROWS[d];
+        tile.classList.remove("pop");
+        void tile.offsetWidth;
+        tile.classList.add("pop");
+      };
+      next();
+      g.onFlick((dir) => {
+        const ghost = tile.cloneNode(true);
+        ghost.classList.remove("pop");
+        ghost.classList.add(`fly-${dir}`);
+        g.stage.append(ghost);
+        if (dir !== current) {
+          tile.classList.add("is-wrong");
+          tile.textContent = ARROWS[current];
+          ghost.remove();
+          g.lose();
+          return;
+        }
+        done++;
+        counter.textContent = `のこり ${total - done}`;
+        if (done >= total) {
+          tile.style.visibility = "hidden";
+          g.win();
+          return;
+        }
+        next();
+      });
+    },
+  },
+
+  {
+    id: "count",
+    title: "数えろ",
+    theme: "yellow",
+    timeout: "lose",
+    instruction: () => "一瞬だけ出る★を数えろ！",
+    setup(g) {
+      const min = 4 + g.level;
+      const max = 7 + Math.floor(g.level * 1.5);
+      const n = min + Math.floor(Math.random() * (max - min + 1));
+      const showFor = Math.max(0.8, 1.4 - g.level * 0.1);
+      // ★が重ならないように置く（置けた数が答え）
+      const w = g.stage.clientWidth || 300;
+      const h = g.stage.clientHeight || 400;
+      const placed = [];
+      for (let tries = 0; placed.length < n && tries < 600; tries++) {
+        const x = 0.12 + Math.random() * 0.76;
+        const y = 0.14 + Math.random() * 0.58;
+        if (placed.every(([px, py]) => Math.hypot((px - x) * w, (py - y) * h) > 44)) placed.push([x, y]);
+      }
+      const answer = placed.length;
+
+      const field = g.el("div", "g-field");
+      for (const [x, y] of placed) {
+        const star = g.el("span", "g-star is-small");
+        star.style.left = `${x * 100}%`;
+        star.style.top = `${y * 100}%`;
+        field.append(star);
+      }
+      const note = g.el("p", "g-note g-top", "よく見て…");
+      const row = gChoiceRow(g, answer, gNearWrongs(answer, 2, 2));
+      row.classList.add("g-bottom");
+      row.hidden = true;
+      g.stage.append(field, note, row);
+
+      let shown = false;
+      g.after(showFor * 1000, () => {
+        field.replaceChildren();
+        note.textContent = "★はいくつあった？";
+        row.hidden = false;
+        shown = true;
+      });
+      gOnChoice(g, row, answer, () => shown);
+    },
+  },
+
+  {
+    id: "math",
+    title: "計算",
+    theme: "lime",
+    timeout: "lose",
+    instruction: () => "答えをタップ！",
+    setup(g) {
+      const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+      let a;
+      let b;
+      let op;
+      let answer;
+      if (g.level < 2) {
+        a = r(2, 9);
+        b = r(2, 9);
+        op = "+";
+        answer = a + b;
+      } else if (g.level < 4) {
+        if (Math.random() < 0.5) {
+          a = r(8, 19);
+          b = r(2, a - 2);
+          op = "−";
+          answer = a - b;
+        } else {
+          a = r(11, 39);
+          b = r(3, 9);
+          op = "+";
+          answer = a + b;
+        }
+      } else if (Math.random() < 0.5) {
+        a = r(3, 9);
+        b = r(3, 9);
+        op = "×";
+        answer = a * b;
+      } else {
+        a = r(21, 69);
+        b = r(12, 29);
+        op = "+";
+        answer = a + b;
+      }
+      const wrongs = op === "×" ? gNearWrongs(answer, 2, Math.max(a, b)) : gNearWrongs(answer, 2, 3);
+      const row = gChoiceRow(g, answer, wrongs);
+      g.stage.append(g.el("p", "g-question", `${a} ${op} ${b} = ?`), row);
+      gOnChoice(g, row, answer);
+    },
+  },
+
+  {
+    id: "trace",
+    title: "なぞれ",
+    theme: "mint",
+    timeout: "lose",
+    instruction: () => "はみ出さずにゴールまでなぞれ！",
+    setup(g) {
+      const svg = gSvg("svg", { class: "g-trace" });
+      const note = g.el("p", "g-note g-top", "Sから指をはなさずに");
+      g.stage.append(svg, note);
+      const sr = g.stage.getBoundingClientRect();
+      const vr = svg.getBoundingClientRect();
+      const ox = vr.left - sr.left;
+      const oy = vr.top - sr.top;
+      const W = vr.width || 300;
+      const H = vr.height || 400;
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+
+      const road = Math.max(30, 48 - g.level * 3);
+      const turns = 3 + Math.min(2, Math.floor(g.level / 2));
+      const m = road + 8;
+      const pts = [];
+      for (let i = 0; i <= turns; i++) {
+        const y = H - m - ((H - 2 * m - 24) * i) / turns;
+        const side = i % 2 === 0 ? 0 : 1;
+        const x = side === 0 ? m + Math.random() * W * 0.22 : W - m - Math.random() * W * 0.22;
+        pts.push([x, y]);
+      }
+      const d = pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ");
+      const common = { d, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round" };
+      svg.append(
+        gSvg("path", { ...common, class: "g-trace-edge", "stroke-width": road + 6 }),
+        gSvg("path", { ...common, class: "g-trace-road", "stroke-width": road }),
+        gSvg("path", { ...common, class: "g-trace-center", "stroke-width": 2 })
+      );
+      const trail = gSvg("polyline", { class: "g-trace-trail", fill: "none", "stroke-width": road * 0.45, "stroke-linecap": "round", "stroke-linejoin": "round", points: "" });
+      svg.append(trail);
+      const marker = (p, label, cls) => {
+        const grp = gSvg("g", { class: cls });
+        grp.append(gSvg("circle", { cx: p[0], cy: p[1], r: road * 0.62 }));
+        const t = gSvg("text", { x: p[0], y: p[1], "text-anchor": "middle", "dominant-baseline": "central" });
+        t.textContent = label;
+        grp.append(t);
+        svg.append(grp);
+      };
+      const start = pts[0];
+      const goal = pts[pts.length - 1];
+      marker(start, "S", "g-trace-start");
+      marker(goal, "G", "g-trace-goal");
+
+      const distToSeg = (x, y, [ax, ay], [bx, by]) => {
+        const dx = bx - ax;
+        const dy = by - ay;
+        const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+        return Math.hypot(x - (ax + t * dx), y - (ay + t * dy));
+      };
+      const distToPath = (x, y) => {
+        let best = Infinity;
+        for (let i = 1; i < pts.length; i++) best = Math.min(best, distToSeg(x, y, pts[i - 1], pts[i]));
+        return best;
+      };
+
+      let tracing = false;
+      let over = false;
+      let points = [];
+      const toLocal = (p) => [p.x - ox, p.y - oy];
+      g.onTap((p) => {
+        if (over) return;
+        const [x, y] = toLocal(p);
+        if (Math.hypot(x - start[0], y - start[1]) <= road * 0.8) {
+          tracing = true;
+          points = [[x, y]];
+          note.textContent = "そのまま…";
+        }
+      });
+      g.onDrag((p) => {
+        if (!tracing || over) return;
+        const [x, y] = toLocal(p);
+        points.push([x, y]);
+        trail.setAttribute("points", points.map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(" "));
+        if (distToPath(x, y) > road / 2 + 4) {
+          over = true;
+          trail.classList.add("is-out");
+          note.textContent = "はみ出した！";
+          g.lose();
+        } else if (Math.hypot(x - goal[0], y - goal[1]) <= road * 0.6) {
+          over = true;
+          note.textContent = "ゴール！";
+          g.win();
+        }
+      });
+      g.onRelease(() => {
+        if (!tracing || over) return;
+        tracing = false;
+        points = [];
+        trail.setAttribute("points", "");
+        note.textContent = "指をはなさないで！Sからもう一度";
+      });
+    },
+  },
+
+  {
+    id: "pair",
+    title: "ペアさがし",
+    theme: "pink",
+    timeout: "lose",
+    instruction: () => "同じマークを2つタップ！",
+    setup(g) {
+      const n = g.level >= 3 ? 4 : 3;
+      const SHAPES = ["circle", "tri", "square", "diamond", "star", "down"];
+      const COLORS = g.level >= 2 ? ["pink", "sky", "mint"] : ["pink", "sky", "mint", "yellow", "orange", "lilac"];
+      const combos = [];
+      for (const shape of SHAPES) for (const color of COLORS) combos.push({ shape, color });
+      for (let i = combos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [combos[i], combos[j]] = [combos[j], combos[i]];
+      }
+      const tiles = combos.slice(0, n * n - 1);
+      tiles.push(tiles[0]);
+      for (let i = tiles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+      }
+      const grid = g.el("div", "g-grid");
+      grid.style.setProperty("--n", String(n));
+      tiles.forEach((t, i) => {
+        const tile = g.el("div", `g-pair c-${t.color}`);
+        tile.append(g.el("span", `g-shape s-${t.shape}`));
+        tile.dataset.key = `${t.shape}${t.color}`;
+        tile.dataset.i = String(i);
+        grid.append(tile);
+      });
+      g.stage.append(grid);
+
+      let first = null;
+      g.onTap(({ target }) => {
+        const tile = target && target.closest && target.closest(".g-pair");
+        if (!tile) return;
+        if (!first) {
+          first = tile;
+          tile.classList.add("is-picked");
+          return;
+        }
+        if (tile === first) {
+          first.classList.remove("is-picked");
+          first = null;
+          return;
+        }
+        if (tile.dataset.key === first.dataset.key) {
+          tile.classList.add("is-right");
+          first.classList.add("is-right");
+          g.win();
+        } else {
+          tile.classList.add("is-wrong");
+          first.classList.add("is-wrong");
+          for (const c of grid.children) if (c.dataset.key === tiles[0].shape + tiles[0].color) c.classList.add("is-right");
+          g.lose();
+        }
+      });
+    },
+  },
+
+  {
+    id: "stack",
+    title: "つみあげ",
+    theme: "orange",
+    timeout: "lose",
+    instruction: (lv) => `タップで落として${3 + Math.floor(lv / 2)}段つめ！`,
+    setup(g) {
+      const goal = 3 + Math.floor(g.level / 2);
+      const speed = 0.8 + g.level * 0.15; // 1秒に動く量（幅に対する割合）
+      const COLORS = ["pink", "sky", "mint", "yellow", "lilac", "lime"];
+      const field = g.el("div", "g-field");
+      const counter = g.el("p", "g-note g-top", `のこり ${goal}`);
+      g.stage.append(field, counter);
+      const fieldH = field.clientHeight || 400;
+      const blockH = Math.min(38, Math.floor((fieldH - 70) / (goal + 2)));
+
+      const makeBlock = (left, width, row, color) => {
+        const node = g.el("div", `g-block c-${color}`);
+        node.style.height = `${blockH}px`;
+        node.style.bottom = `${12 + row * blockH}px`;
+        node.style.left = `${left * 100}%`;
+        node.style.width = `${width * 100}%`;
+        field.append(node);
+        return node;
+      };
+      const tower = [{ left: 0.25, width: 0.5 }];
+      makeBlock(0.25, 0.5, 0, "orange").classList.add("is-base");
+
+      let moving = null;
+      const spawn = () => {
+        const top = tower[tower.length - 1];
+        const fromLeft = tower.length % 2 === 1;
+        const left = fromLeft ? 0 : 1 - top.width;
+        moving = { left, width: top.width, dir: fromLeft ? 1 : -1 };
+        moving.el = makeBlock(left, top.width, tower.length, COLORS[tower.length % COLORS.length]);
+      };
+      spawn();
+
+      g.frame((dt) => {
+        if (!moving) return;
+        moving.left += moving.dir * speed * dt;
+        if (moving.left <= 0) {
+          moving.left = 0;
+          moving.dir = 1;
+        } else if (moving.left >= 1 - moving.width) {
+          moving.left = 1 - moving.width;
+          moving.dir = -1;
+        }
+        moving.el.style.left = `${moving.left * 100}%`;
+      });
+
+      g.onTap(() => {
+        if (!moving) return;
+        const top = tower[tower.length - 1];
+        const m = moving;
+        moving = null;
+        if (Math.abs(m.left - top.left) < 0.025) m.left = top.left; // ほぼぴったりならそろえる
+        const l = Math.max(m.left, top.left);
+        const r = Math.min(m.left + m.width, top.left + top.width);
+        if (r - l <= 0.02) {
+          m.el.classList.add("is-fall");
+          g.lose();
+          return;
+        }
+        m.el.style.left = `${l * 100}%`;
+        m.el.style.width = `${(r - l) * 100}%`;
+        tower.push({ left: l, width: r - l });
+        const placed = tower.length - 1;
+        counter.textContent = `のこり ${goal - placed}`;
+        if (placed >= goal) {
+          g.win();
+          return;
+        }
+        spawn();
+      });
+    },
+  },
+
+  {
+    id: "pop",
+    title: "ふうせん割り",
+    theme: "lilac",
+    timeout: "lose",
+    instruction: (lv) => `ふうせんだけ${4 + Math.floor(lv / 2)}こ割れ！`,
+    setup(g) {
+      const goal = 4 + Math.floor(g.level / 2);
+      const bombRate = Math.min(0.45, 0.22 + g.level * 0.05);
+      const every = Math.max(0.28, 0.42 - g.level * 0.03);
+      const speed = 0.32 + g.level * 0.05; // 1秒にのぼる量（高さに対する割合）
+      const COLORS = ["pink", "sky", "yellow", "mint"];
+      const field = g.el("div", "g-field");
+      const counter = g.el("p", "g-note g-top", `のこり ${goal}　ばくだんはダメ`);
+      g.stage.append(field, counter);
+
+      const items = [];
+      let untilSpawn = 0;
+      let popped = 0;
+      let lastBomb = false;
+      g.frame((dt, elapsed) => {
+        untilSpawn -= dt;
+        if (untilSpawn <= 0) {
+          untilSpawn += every;
+          const bomb = !lastBomb && Math.random() < bombRate;
+          lastBomb = bomb;
+          const node = g.el("div", bomb ? "g-floater is-bomb" : `g-floater is-balloon c-${COLORS[Math.floor(Math.random() * COLORS.length)]}`);
+          const item = { node, x0: 0.14 + Math.random() * 0.72, y: 1.1, phase: Math.random() * 6, bomb, gone: false };
+          node.style.left = `${item.x0 * 100}%`;
+          field.append(node);
+          items.push(item);
+        }
+        for (const item of items) {
+          if (item.gone) continue;
+          item.y -= speed * dt;
+          item.node.style.top = `${item.y * 100}%`;
+          item.node.style.left = `${(item.x0 + Math.sin(elapsed * 2 + item.phase) * 0.03) * 100}%`;
+          if (item.y < -0.15) {
+            item.gone = true;
+            item.node.remove();
+          }
+        }
+      });
+
+      g.onTap(({ target }) => {
+        const node = target && target.closest && target.closest(".g-floater");
+        if (!node) return;
+        const item = items.find((it) => it.node === node);
+        if (!item || item.gone) return;
+        item.gone = true;
+        if (item.bomb) {
+          node.classList.add("is-boom");
+          counter.textContent = "ドカーン！";
+          g.lose();
+          return;
+        }
+        node.classList.add("is-popped");
+        popped++;
+        counter.textContent = `のこり ${Math.max(0, goal - popped)}　ばくだんはダメ`;
+        if (popped >= goal) g.win();
+      });
     },
   },
 ];

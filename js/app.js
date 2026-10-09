@@ -11,7 +11,7 @@
   const BEST_KEY = "gobyo-best";
   const HASHTAG = "ゴビョー";
   const MISS_LINES = ["ざんねん！", "おしい！", "ドンマイ！", "つぎ、つぎ！"];
-  const GAME_KEYS = ["ArrowLeft", "ArrowRight", " ", "Enter"];
+  const GAME_KEYS = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", " ", "Enter"];
   const NAV_KEYS = ["ArrowUp", "ArrowDown", "PageUp", "PageDown"];
 
   const feed = document.getElementById("feed");
@@ -289,7 +289,7 @@
   function makeApi(ctl, run) {
     const stage = ctl.stage;
     const alive = () => ctl.run === run && ctl.status === "play";
-    const fns = { tap: [], release: [], drag: [], swipe: [], key: [] };
+    const fns = { tap: [], release: [], drag: [], swipe: [], flick: [], key: [] };
     let tapSides = false;
     let pointerId = null;
     let startX = 0;
@@ -325,10 +325,17 @@
     const onMove = (e) => {
       if (e.pointerId !== pointerId || !alive()) return;
       emit(fns.drag, local(e));
-      if (swiped || !fns.swipe.length) return;
+      if (swiped) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)) {
+      const ax = Math.abs(dx);
+      const ay = Math.abs(dy);
+      if (Math.max(ax, ay) <= 26) return;
+      if (fns.flick.length) {
+        swiped = true;
+        emit(fns.flick, ax > ay ? (dx < 0 ? "left" : "right") : dy < 0 ? "up" : "down");
+      }
+      if (fns.swipe.length && ax > ay) {
         swiped = true;
         emit(fns.swipe, dx < 0 ? "left" : "right");
       }
@@ -353,12 +360,19 @@
       stage.removeEventListener("pointercancel", onUp);
     });
 
-    // キーボード：←→ はスワイプ、スペース・Enter はタップ（はなすと onRelease）
+    // キーボード：矢印キーはスワイプ・フリック、スペース・Enter はタップ（はなすと onRelease）
     ctl.keyHandler = (key, type) => {
       emit(fns.key, key, type);
       if (type === "down") {
-        if (key === "ArrowLeft" || key === "ArrowRight") emit(fns.swipe, key === "ArrowLeft" ? "left" : "right");
-        else emit(fns.tap, center());
+        if (key === "ArrowLeft" || key === "ArrowRight") {
+          const dir = key === "ArrowLeft" ? "left" : "right";
+          emit(fns.swipe, dir);
+          emit(fns.flick, dir);
+        } else if (key === "ArrowUp" || key === "ArrowDown") {
+          emit(fns.flick, key === "ArrowUp" ? "up" : "down");
+        } else {
+          emit(fns.tap, center());
+        }
       } else if (key === " " || key === "Enter") {
         emit(fns.release, center());
       }
@@ -390,6 +404,7 @@
       onRelease: (fn) => fns.release.push(fn),
       onDrag: (fn) => fns.drag.push(fn),
       onKey: (fn) => fns.key.push(fn),
+      onFlick: (fn) => fns.flick.push(fn),
       onSwipe: (fn, opts = {}) => {
         fns.swipe.push(fn);
         if (opts.tapSides) tapSides = true;
