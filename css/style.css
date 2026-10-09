@@ -408,6 +408,8 @@ ol { padding: 0; list-style: none; }
   visibility: hidden;
 }
 .slot.is-done .card-foot { visibility: visible; }
+.btn-retry { visibility: hidden; }
+.slot.is-miss .btn-retry { visibility: visible; }
 .next-hint { font-size: 0.9rem; animation: float 1.2s ease-in-out infinite; }
 
 /* ---------- 各ゲームの部品 ---------- */
@@ -584,6 +586,173 @@ ol { padding: 0; list-style: none; }
   background: var(--red);
 }
 .g-meter-mark.is-hit { background: var(--mint); }
+
+/* もぐらたたき */
+.g-holes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: min(100%, 300px, 78cqh);
+  aspect-ratio: 1;
+  margin-top: 22px;
+}
+.g-hole { position: relative; cursor: pointer; }
+.g-hole::after {
+  content: "";
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  bottom: 6%;
+  height: 30%;
+  border-radius: 50%;
+  background: var(--ink);
+  box-shadow: inset 0 6px 0 color-mix(in srgb, var(--ink) 60%, var(--cream));
+}
+.g-mole {
+  position: absolute;
+  z-index: 1;
+  left: 20%;
+  right: 20%;
+  bottom: 18%;
+  height: 66%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50% 50% 30% 30%;
+  background:
+    radial-gradient(circle at 34% 36%, var(--ink) 0 7%, transparent 8%),
+    radial-gradient(circle at 66% 36%, var(--ink) 0 7%, transparent 8%),
+    radial-gradient(ellipse at 50% 56%, var(--pink) 0 12%, transparent 13%),
+    color-mix(in srgb, var(--orange) 55%, var(--ink));
+  transform-origin: bottom center;
+  animation: mole-up 0.12s ease-out;
+  pointer-events: none;
+}
+@keyframes mole-up { from { transform: scaleY(0.2); } to { transform: scaleY(1); } }
+.g-mole.is-hit { animation: mole-bonk 0.2s ease-in forwards; }
+@keyframes mole-bonk { 30% { transform: scale(1.15, 0.7); } 100% { transform: scale(1, 0); } }
+
+/* ふうせん */
+.g-balloon-box { position: relative; width: min(78cqw, 62cqh, 280px); aspect-ratio: 1; }
+.g-ring, .g-balloon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--s) * 100%);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+}
+.g-ring { border: 3px dashed var(--ink); }
+.g-ring-max { background: color-mix(in srgb, var(--lime) 70%, var(--cream)); }
+.g-ring-min { background: var(--cream); }
+.g-balloon {
+  border: var(--line) solid var(--ink);
+  background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--paper) 60%, var(--pink)), var(--pink) 62%);
+  opacity: 0.92;
+}
+.g-balloon::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -11px;
+  width: 14px;
+  height: 12px;
+  translate: -50% 0;
+  background: var(--ink);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.g-balloon.is-burst { animation: burst 0.25s ease-out forwards; }
+@keyframes burst { to { transform: scale(1.5); opacity: 0; } }
+
+/* 早押し */
+.g-lamp {
+  display: grid;
+  place-items: center;
+  width: min(54vw, 200px, 50cqh);
+  aspect-ratio: 1;
+  border: 6px solid var(--ink);
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 0 8px var(--paper), 0 0 0 11px var(--ink);
+  font: clamp(1.4rem, 7vw, 1.8rem) var(--font-pop);
+}
+.g-lamp.is-red {
+  background: var(--red);
+  color: var(--paper);
+  -webkit-text-stroke: 1.5px var(--ink);
+  paint-order: stroke fill;
+  box-shadow: 0 0 0 8px var(--paper), 0 0 0 11px var(--ink), 0 0 40px 14px color-mix(in srgb, var(--red) 55%, transparent);
+}
+.g-lamp.is-foul { background: var(--lilac); }
+
+/* 後出しじゃんけん */
+.g-hand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.g-hand-cpu { width: min(38vw, 140px, 34cqh); aspect-ratio: 1; background: var(--yellow); }
+.g-hand-cpu .g-hand-icon { font-size: clamp(2.8rem, 15vw, 4rem); line-height: 1.1; }
+.g-hands { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; max-width: 340px; }
+.g-hand-pick { aspect-ratio: 1; cursor: pointer; }
+.g-hand-pick .g-hand-icon { font-size: clamp(1.9rem, 10vw, 2.6rem); line-height: 1.1; pointer-events: none; }
+.g-hand-name { font-size: 0.85rem; pointer-events: none; }
+.g-hand.is-right { background: var(--mint); }
+.g-hand.is-wrong { background: var(--red); animation: shake 0.3s; }
+
+/* キャッチ */
+.g-field { position: absolute; inset: 0; }
+.g-basket {
+  position: absolute;
+  top: 86%;
+  width: 88px;
+  height: 38px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 6px 6px 22px 22px;
+  background: repeating-linear-gradient(90deg, var(--pink) 0 10px, color-mix(in srgb, var(--pink) 60%, var(--paper)) 10px 20px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-star {
+  --star: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  translate: -50% -50%;
+  background: var(--ink);
+  clip-path: var(--star);
+}
+.g-star::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  background: var(--yellow);
+  clip-path: var(--star);
+}
+.g-star.is-got { animation: got 0.25s ease-out forwards; }
+@keyframes got { to { transform: scale(1.7); opacity: 0; } }
+
+/* おぼえて */
+.g-arrows { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 100%; }
+.g-arrow {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 54px;
+  border: var(--line) solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+  font: 1.8rem var(--font-dot);
+}
+.g-arrow.is-hidden { background: var(--lilac); color: var(--paper); }
+.g-arrow.is-right { background: var(--mint); color: var(--ink); }
+.g-arrow.is-wrong { background: var(--red); color: var(--paper); }
 
 /* ---------- CM画面（ブラウン管の走査線っぽい柄） ---------- */
 .slot-cm {

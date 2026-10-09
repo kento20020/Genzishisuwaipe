@@ -6,10 +6,13 @@
   const READY_MS = 900; // 「READY?」を見せる時間
   const GO_MS = 350; // 「GO!」を見せる時間
   const AUTO_NEXT_MS = 1500; // 結果のあと自動で次へ進むまで（0で自動送りなし）
+  const LEVEL_EVERY = 4; // 何COMBOごとに難しくなるか
   const CM_EVERY = 8; // 何ゲームごとにCM画面を挟むか（将来の広告枠）
   const BEST_KEY = "gobyo-best";
   const HASHTAG = "ゴビョー";
   const MISS_LINES = ["ざんねん！", "おしい！", "ドンマイ！", "つぎ、つぎ！"];
+  const GAME_KEYS = ["ArrowLeft", "ArrowRight", " ", "Enter"];
+  const NAV_KEYS = ["ArrowUp", "ArrowDown", "PageUp", "PageDown"];
 
   const feed = document.getElementById("feed");
   const comboChip = document.getElementById("hudComboChip");
@@ -38,7 +41,7 @@
   }
 
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const levelNow = () => Math.min(5, Math.floor(state.combo / 4));
+  const levelNow = () => Math.min(5, Math.floor(state.combo / LEVEL_EVERY));
 
   function loadBest() {
     try {
@@ -73,6 +76,7 @@
     }, 2200);
   }
 
+  // ---------- 上のスコア表示 ----------
   function updateHud(bump) {
     comboEl.textContent = String(state.combo);
     bestEl.textContent = String(state.best);
@@ -111,11 +115,12 @@
   function createGameSlot(game, no) {
     const section = el("section", `slot slot-game theme-${game.theme}`);
     section.setAttribute("aria-label", `No.${no} ${game.title}`);
+    const config = game.prepare ? game.prepare(levelNow()) : {};
 
     const card = el("div", "card");
     const head = el("div", "card-head");
     head.append(el("span", "card-no", `No.${String(no).padStart(3, "0")}`), el("span", "card-title", game.title));
-    const inst = el("p", "inst", game.instruction(levelNow()));
+    const inst = el("p", "inst", game.instruction(levelNow(), config));
     const fuse = el("div", "fuse");
     const fuseBar = el("span");
     fuse.append(fuseBar);
@@ -129,7 +134,7 @@
     screen.append(stage, overlay);
 
     const foot = el("div", "card-foot");
-    const retry = el("button", "btn btn-small", "もう一回");
+    const retry = el("button", "btn btn-small btn-retry", "もう一回");
     retry.type = "button";
     foot.append(retry, el("span", "next-hint", "↑ スワイプで次へ"));
 
@@ -139,6 +144,7 @@
     const ctl = {
       section,
       game,
+      config,
       inst,
       fuseBar,
       stage,
@@ -220,7 +226,7 @@
     ctl.status = "ready";
     ctl.section.classList.remove("is-done", "is-clear", "is-miss", "is-playing");
     ctl.stage.replaceChildren();
-    ctl.inst.textContent = ctl.game.instruction(levelNow());
+    ctl.inst.textContent = ctl.game.instruction(levelNow(), ctl.config);
     resetFuse(ctl);
     showOverlay(ctl, "ready", "READY?");
     later(ctl, READY_MS, () => showOverlay(ctl, "go", "GO!"));
@@ -254,7 +260,6 @@
     freezeFuse(ctl);
     ctl.section.classList.remove("is-playing");
     ctl.section.classList.add("is-done", won ? "is-clear" : "is-miss");
-
     let sub;
     if (won) {
       state.combo++;
@@ -284,52 +289,57 @@
   function makeApi(ctl, run) {
     const stage = ctl.stage;
     const alive = () => ctl.run === run && ctl.status === "play";
-    const tapFns = [];
-    const swipeFns = [];
+    const fns = { tap: [], release: [], drag: [], swipe: [], key: [] };
     let tapSides = false;
     let pointerId = null;
     let startX = 0;
     let startY = 0;
     let swiped = false;
 
+    const emit = (list, arg, extra) => list.forEach((fn) => alive() && fn(arg, extra));
     const local = (e) => {
       const r = stage.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
     };
-    const emitSwipe = (dir) => swipeFns.forEach((fn) => alive() && fn(dir));
+    const center = () => {
+      const r = stage.getBoundingClientRect();
+      return { x: r.width / 2, y: r.height / 2, w: r.width, h: r.height, target: null };
+    };
 
     const onDown = (e) => {
       if (!alive()) return;
-      pointerId = e.pointerId;
-      startX = e.clientX;
-      startY = e.clientY;
-      swiped = false;
-      if (swipeFns.length) {
+      // 連打できるよう、2本目の指でもタップとして数える。スワイプ・ドラッグは1本目の指だけ見る
+      if (pointerId === null) {
+        pointerId = e.pointerId;
+        startX = e.clientX;
+        startY = e.clientY;
+        swiped = false;
         try {
           stage.setPointerCapture(e.pointerId);
         } catch (_) {
           // 取れなくても動作には影響しない
         }
       }
-      const p = local(e);
-      tapFns.forEach((fn) => alive() && fn({ ...p, target: e.target }));
+      emit(fns.tap, { ...local(e), target: e.target });
     };
     const onMove = (e) => {
-      if (e.pointerId !== pointerId || swiped || !swipeFns.length || !alive()) return;
+      if (e.pointerId !== pointerId || !alive()) return;
+      emit(fns.drag, local(e));
+      if (swiped || !fns.swipe.length) return;
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
       if (Math.abs(dx) > 26 && Math.abs(dx) > Math.abs(dy)) {
         swiped = true;
-        emitSwipe(dx < 0 ? "left" : "right");
+        emit(fns.swipe, dx < 0 ? "left" : "right");
       }
     };
     const onUp = (e) => {
       if (e.pointerId !== pointerId) return;
       pointerId = null;
-      if (!swiped && tapSides && alive() && e.type === "pointerup") {
-        const p = local(e);
-        emitSwipe(p.x < p.w / 2 ? "left" : "right");
-      }
+      if (!alive()) return;
+      const p = local(e);
+      emit(fns.release, p);
+      if (!swiped && tapSides && e.type === "pointerup") emit(fns.swipe, p.x < p.w / 2 ? "left" : "right");
     };
 
     stage.addEventListener("pointerdown", onDown);
@@ -343,18 +353,21 @@
       stage.removeEventListener("pointercancel", onUp);
     });
 
-    ctl.keyHandler = (key) => {
-      if (key === "ArrowLeft" || key === "ArrowRight") {
-        emitSwipe(key === "ArrowLeft" ? "left" : "right");
-      } else {
-        const r = stage.getBoundingClientRect();
-        tapFns.forEach((fn) => alive() && fn({ x: r.width / 2, y: r.height / 2, w: r.width, h: r.height, target: null }));
+    // キーボード：←→ はスワイプ、スペース・Enter はタップ（はなすと onRelease）
+    ctl.keyHandler = (key, type) => {
+      emit(fns.key, key, type);
+      if (type === "down") {
+        if (key === "ArrowLeft" || key === "ArrowRight") emit(fns.swipe, key === "ArrowLeft" ? "left" : "right");
+        else emit(fns.tap, center());
+      } else if (key === " " || key === "Enter") {
+        emit(fns.release, center());
       }
     };
 
     const api = {
       stage,
       level: levelNow(),
+      config: ctl.config,
       el,
       win: () => api.end(true),
       lose: () => api.end(false),
@@ -373,27 +386,24 @@
         };
         requestAnimationFrame(loop);
       },
-      onTap: (fn) => tapFns.push(fn),
+      onTap: (fn) => fns.tap.push(fn),
+      onRelease: (fn) => fns.release.push(fn),
+      onDrag: (fn) => fns.drag.push(fn),
+      onKey: (fn) => fns.key.push(fn),
       onSwipe: (fn, opts = {}) => {
-        swipeFns.push(fn);
+        fns.swipe.push(fn);
         if (opts.tapSides) tapSides = true;
       },
     };
     return api;
   }
 
-  // ---------- CM画面（将来ここに広告を置く） ----------
+  // ---------- シェア ----------
   function shareUrl() {
     // window.GOBYO_SHARE_URL を文字列で指定すると、そのURLをシェアに使う（"" ならURLなし）
     if (typeof window.GOBYO_SHARE_URL === "string") return window.GOBYO_SHARE_URL;
     if (!/^https?:$/.test(location.protocol)) return "";
     return location.origin + location.pathname;
-  }
-
-  function shareText() {
-    return state.best > 0
-      ? `ゴビョー！で${state.best}連続クリア！\n5秒ミニゲーム、きみは何連続いける？`
-      : "5秒ミニゲーム「ゴビョー！」\nきみは何連続クリアできる？";
   }
 
   async function copyText(text) {
@@ -421,22 +431,9 @@
     toast(ok ? "コピーしました" : "コピーできませんでした");
   }
 
-  function createCmSlot() {
-    const section = el("section", "slot slot-cm");
-    section.setAttribute("aria-label", "CM");
-    const card = el("div", "card cm-card");
-
-    const bars = el("div", "cm-bars");
-    bars.setAttribute("aria-hidden", "true");
-    const label = el("p", "cm-label", "CM");
-    const title = el("h2", "cm-title");
-    title.append("コマーシャルのあとも", document.createElement("br"), "ゴビョー！は つづく");
-    const best = el("p", "cm-best");
-    const bestNum = el("b", null, "0");
-    best.append("いまのベスト ", bestNum, " COMBO");
-    const lead = el("p", "cm-lead", "友達に挑戦状をおくろう");
-
-    const share = el("div", "share");
+  // X・LINE・コピー・端末の共有ボタンの列。getText() でその時点の文章を作る
+  function makeShareRow(getText) {
+    const row = el("div", "share");
     const x = el("a", "btn btn-ink", "Xでポスト");
     const line = el("a", "btn btn-mint", "LINEで送る");
     for (const a of [x, line]) {
@@ -448,29 +445,57 @@
     const native = el("button", "btn", "ほかのアプリ");
     native.type = "button";
     native.hidden = typeof navigator.share !== "function";
-    share.append(x, line, copy, native);
+    row.append(x, line, copy, native);
 
-    // 広告を載せるときは、このCM画面の中に広告タグを入れる
-    card.append(bars, label, title, best, lead, share);
-    section.append(card);
-
+    const fullText = () => [getText(), `#${HASHTAG}`, shareUrl()].filter(Boolean).join("\n");
     const refresh = () => {
-      bestNum.textContent = String(state.best);
-      const text = shareText();
       const url = shareUrl();
       const enc = encodeURIComponent;
-      x.href = `https://twitter.com/intent/tweet?text=${enc(text)}&hashtags=${enc(HASHTAG)}${url ? `&url=${enc(url)}` : ""}`;
-      line.href = `https://line.me/R/share?text=${enc([text, `#${HASHTAG}`, url].filter(Boolean).join("\n"))}`;
+      x.href = `https://twitter.com/intent/tweet?text=${enc(getText())}&hashtags=${enc(HASHTAG)}${url ? `&url=${enc(url)}` : ""}`;
+      line.href = `https://line.me/R/share?text=${enc(fullText())}`;
     };
-    copy.addEventListener("click", () => copyText([shareText(), `#${HASHTAG}`, shareUrl()].filter(Boolean).join("\n")));
+    copy.addEventListener("click", () => copyText(fullText()));
     native.addEventListener("click", () => {
       const url = shareUrl();
-      navigator.share({ title: "ゴビョー！", text: `${shareText()}\n#${HASHTAG}`, url: url || undefined }).catch((err) => {
+      navigator.share({ title: "ゴビョー！", text: `${getText()}\n#${HASHTAG}`, url: url || undefined }).catch((err) => {
         if (err && err.name !== "AbortError") toast("この画面では使えません。文章をコピーしてください");
       });
     });
+    refresh();
+    return { el: row, refresh };
+  }
 
-    register(section, { section, activate: refresh, deactivate() {} });
+  // ---------- CM画面（将来ここに広告を置く） ----------
+  function createCmSlot() {
+    const section = el("section", "slot slot-cm");
+    section.setAttribute("aria-label", "CM");
+    const card = el("div", "card cm-card");
+
+    const bars = el("div", "cm-bars");
+    bars.setAttribute("aria-hidden", "true");
+    const title = el("h2", "cm-title");
+    title.append("コマーシャルのあとも", document.createElement("br"), "ゴビョー！は つづく");
+    const best = el("p", "cm-best");
+    const bestNum = el("b", null, "0");
+    best.append("いまのベスト ", bestNum, " COMBO");
+    const share = makeShareRow(() =>
+      state.best > 0
+        ? `ゴビョー！で${state.best}連続クリア！\n5秒ミニゲーム、きみは何連続いける？`
+        : "5秒ミニゲーム「ゴビョー！」\nきみは何連続クリアできる？"
+    );
+
+    // 広告を載せるときは、このCM画面の中に広告タグを入れる
+    card.append(bars, el("p", "cm-label", "CM"), title, best, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
+    section.append(card);
+
+    register(section, {
+      section,
+      activate() {
+        bestNum.textContent = String(state.best);
+        share.refresh();
+      },
+      deactivate() {},
+    });
     return section;
   }
 
@@ -509,12 +534,10 @@
   }
 
   document.addEventListener("keydown", (e) => {
-    const keys = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "ArrowLeft", "ArrowRight", " ", "Enter"];
     if (state.locked) {
-      if (!keys.includes(e.key)) return;
-      e.preventDefault();
+      if (GAME_KEYS.includes(e.key) || NAV_KEYS.includes(e.key)) e.preventDefault();
       const ctl = state.active;
-      if (ctl && ctl.keyHandler && ["ArrowLeft", "ArrowRight", " ", "Enter"].includes(e.key)) ctl.keyHandler(e.key);
+      if (!e.repeat && ctl && ctl.keyHandler && GAME_KEYS.includes(e.key)) ctl.keyHandler(e.key, "down");
       return;
     }
     if (e.key === "ArrowDown" || e.key === "PageDown") {
@@ -524,6 +547,10 @@
       e.preventDefault();
       goPrev();
     }
+  });
+  document.addEventListener("keyup", (e) => {
+    const ctl = state.active;
+    if (state.locked && ctl && ctl.keyHandler && GAME_KEYS.includes(e.key)) ctl.keyHandler(e.key, "up");
   });
 
   // ---------- 起動 ----------
@@ -538,6 +565,6 @@
   });
   document.getElementById("btnStart").addEventListener("click", goNext);
   titleBest.textContent = String(state.best);
-  updateHud(false);
+  updateHud();
   appendGames(6);
 })();

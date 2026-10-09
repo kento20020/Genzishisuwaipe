@@ -5,17 +5,22 @@
  *   title       : 画面上のゲーム名
  *   theme       : 背景の色と模様（pink / yellow / mint / sky / orange / lilac / lime）
  *   timeout     : 5秒たったときの結果。"lose"＝時間切れで失敗、"win"＝耐えきれば成功
- *   instruction : お題の文章。level（0〜5、連続クリアで上がる）を受け取って返す
+ *   prepare     : （なくてもよい）お題を決める前の準備。level を受け取り、設定を返す
+ *   instruction : お題の文章。level（0〜5、連続クリアで上がる）と prepare の設定を受け取って返す
  *   setup(g)    : ゲーム本体。g の中身は次のとおり
  *     g.stage           ゲームを描く場所（div）
  *     g.level           むずかしさ（0〜5）
+ *     g.config          prepare が返した設定
  *     g.el(tag, class, text)  要素を作る
  *     g.win() / g.lose()      成功・失敗で終了
  *     g.after(ms, fn)         ms後に1回だけ実行
  *     g.frame(fn)             毎フレーム fn(経過秒の差分, 開始からの秒) を実行
- *     g.onTap(fn)             画面に触れた瞬間 fn({x, y, w, h, target})
- *     g.onSwipe(fn, {tapSides})  左右のスワイプで fn("left" | "right")
+ *     g.onTap(fn)             画面に触れた瞬間 fn({x, y, w, h, target})（スペースキーでも反応）
+ *     g.onRelease(fn)         指をはなした瞬間 fn({x, y, w, h})（長押しゲーム用）
+ *     g.onDrag(fn)            指を動かしているあいだ fn({x, y, w, h})
+ *     g.onSwipe(fn, {tapSides})  左右のスワイプで fn("left" | "right")（←→キーでも反応）
  *                                tapSides: true なら、画面の左半分／右半分のタップでも反応
+ *     g.onKey(fn)             キー操作 fn(key, "down" | "up")
  * ゲームが終わると、タイマーや操作の受付はすべて自動で止まります。
  */
 
@@ -284,6 +289,324 @@ const GAMES = [
         if (ok) g.win();
         else g.lose();
       });
+    },
+  },
+  {
+    id: "whack",
+    title: "もぐらたたき",
+    theme: "orange",
+    timeout: "lose",
+    instruction: (lv) => `モグラを${4 + Math.floor(lv / 2)}匹たたけ！`,
+    setup(g) {
+      const goal = 4 + Math.floor(g.level / 2);
+      const stay = Math.max(0.5, 0.9 - g.level * 0.08); // モグラが出ている秒数
+      const every = Math.max(0.32, 0.5 - g.level * 0.04); // 何秒ごとに出るか
+      let hits = 0;
+      const counter = g.el("p", "g-note g-top", `のこり ${goal}`);
+      const field = g.el("div", "g-holes");
+      const holes = [];
+      for (let i = 0; i < 9; i++) {
+        const hole = g.el("div", "g-hole");
+        hole.dataset.i = String(i);
+        field.append(hole);
+        holes.push({ el: hole, mole: null, until: 0 });
+      }
+      g.stage.append(counter, field);
+
+      let now = 0;
+      let untilSpawn = 0.15;
+      let last = -1;
+      g.frame((dt, elapsed) => {
+        now = elapsed;
+        untilSpawn -= dt;
+        if (untilSpawn <= 0) {
+          untilSpawn += every;
+          const free = holes.map((h, i) => i).filter((i) => !holes[i].mole && i !== last);
+          if (free.length) {
+            const i = free[Math.floor(Math.random() * free.length)];
+            last = i;
+            const mole = g.el("span", "g-mole");
+            holes[i].el.append(mole);
+            holes[i].mole = mole;
+            holes[i].until = now + stay;
+          }
+        }
+        for (const h of holes) {
+          if (h.mole && now >= h.until) {
+            h.mole.remove();
+            h.mole = null;
+          }
+        }
+      });
+
+      g.onTap(({ target }) => {
+        const holeEl = target && target.closest && target.closest(".g-hole");
+        if (!holeEl) return;
+        const h = holes[Number(holeEl.dataset.i)];
+        if (!h.mole) return;
+        const mole = h.mole;
+        h.mole = null;
+        mole.classList.add("is-hit");
+        g.after(200, () => mole.remove());
+        hits++;
+        counter.textContent = `のこり ${goal - hits}`;
+        if (hits >= goal) g.win();
+      });
+    },
+  },
+
+  {
+    id: "balloon",
+    title: "ふうせん",
+    theme: "sky",
+    timeout: "lose",
+    instruction: () => "長押しして、線のあいだで離せ！",
+    setup(g) {
+      const zMin = 0.6;
+      const zMax = zMin + Math.max(0.08, 0.17 - g.level * 0.018);
+      const burstAt = zMax + 0.1;
+      const rate = 0.42 + g.level * 0.06; // 1秒にふくらむ量
+      const box = g.el("div", "g-balloon-box");
+      const ringMax = g.el("span", "g-ring g-ring-max");
+      ringMax.style.setProperty("--s", String(zMax));
+      const ringMin = g.el("span", "g-ring g-ring-min");
+      ringMin.style.setProperty("--s", String(zMin));
+      const balloon = g.el("span", "g-balloon");
+      const note = g.el("p", "g-note", "おしているあいだ、ふくらむ");
+      box.append(ringMax, ringMin, balloon);
+      g.stage.append(box, note);
+
+      let size = 0.15;
+      let pressing = false;
+      let released = false;
+      const draw = () => balloon.style.setProperty("--s", size.toFixed(3));
+      draw();
+
+      g.onTap(() => {
+        if (!released) pressing = true;
+      });
+      g.onRelease(() => {
+        if (!pressing || released) return;
+        pressing = false;
+        released = true;
+        if (size >= zMin && size <= zMax) {
+          note.textContent = "ちょうどいい！";
+          g.win();
+        } else {
+          note.textContent = size < zMin ? "ちいさすぎ！" : "おおきすぎ！";
+          g.lose();
+        }
+      });
+      g.frame((dt) => {
+        if (!pressing) return;
+        size += rate * dt;
+        draw();
+        if (size >= burstAt) {
+          pressing = false;
+          released = true;
+          balloon.classList.add("is-burst");
+          note.textContent = "パーン！";
+          g.lose();
+        }
+      });
+    },
+  },
+
+  {
+    id: "react",
+    title: "早押し",
+    theme: "lime",
+    timeout: "lose",
+    instruction: () => "赤になったらタップ！",
+    setup(g) {
+      const windowSec = Math.max(0.35, 0.65 - g.level * 0.06); // 赤になってから押せる秒数
+      const redAt = 1 + Math.random() * (2.6 - windowSec);
+      const lamp = g.el("div", "g-lamp", "まだ…");
+      const note = g.el("p", "g-note", "フライングはアウト");
+      g.stage.append(lamp, note);
+      let redTime = null;
+      g.after(redAt * 1000, () => {
+        redTime = performance.now();
+        lamp.classList.add("is-red");
+        lamp.textContent = "今だ！";
+      });
+      g.after((redAt + windowSec) * 1000, () => {
+        lamp.textContent = "おそい！";
+        g.lose();
+      });
+      g.onTap(() => {
+        if (redTime === null) {
+          lamp.classList.add("is-foul");
+          lamp.textContent = "フライング";
+          g.lose();
+          return;
+        }
+        note.textContent = `${Math.round(performance.now() - redTime)}ミリ秒`;
+        g.win();
+      });
+    },
+  },
+
+  {
+    id: "janken",
+    title: "後出しじゃんけん",
+    theme: "yellow",
+    timeout: "lose",
+    prepare(level) {
+      const modes = level >= 2 ? ["win", "lose", "draw"] : ["win", "lose"];
+      return { cpu: Math.floor(Math.random() * 3), mode: modes[Math.floor(Math.random() * modes.length)] };
+    },
+    instruction: (lv, c) => ({ win: "あいてに かて！", lose: "わざと まけろ！", draw: "あいこに しろ！" })[c.mode],
+    setup(g) {
+      const HANDS = [
+        { name: "グー", icon: "✊" },
+        { name: "チョキ", icon: "✌️" },
+        { name: "パー", icon: "✋" },
+      ];
+      const { cpu, mode } = g.config;
+      const beats = (a, b) => (b - a + 3) % 3 === 1; // a が b に勝つ
+      const makeHand = (hand, className) => {
+        const node = g.el("div", `g-hand ${className}`);
+        node.append(g.el("span", "g-hand-icon", hand.icon), g.el("span", "g-hand-name", hand.name));
+        return node;
+      };
+      const row = g.el("div", "g-hands");
+      HANDS.forEach((hand, i) => {
+        const pickEl = makeHand(hand, "g-hand-pick");
+        pickEl.dataset.i = String(i);
+        row.append(pickEl);
+      });
+      g.stage.append(g.el("p", "g-note", "あいての手"), makeHand(HANDS[cpu], "g-hand-cpu"), row);
+      g.onTap(({ target }) => {
+        const pickEl = target && target.closest && target.closest(".g-hand-pick");
+        if (!pickEl) return;
+        const me = Number(pickEl.dataset.i);
+        const ok = mode === "win" ? beats(me, cpu) : mode === "lose" ? beats(cpu, me) : me === cpu;
+        pickEl.classList.add(ok ? "is-right" : "is-wrong");
+        if (ok) g.win();
+        else g.lose();
+      });
+    },
+  },
+
+  {
+    id: "catch",
+    title: "キャッチ",
+    theme: "mint",
+    timeout: "lose",
+    instruction: (lv) => `★を${3 + Math.floor(lv / 2)}こキャッチ！`,
+    setup(g) {
+      const goal = 3 + Math.floor(g.level / 2);
+      const speed = 0.5 + g.level * 0.07; // 1秒に落ちる割合（画面の高さ比）
+      const every = Math.max(0.35, 0.55 - g.level * 0.04);
+      const BASKET_Y = 0.86;
+      let got = 0;
+      const counter = g.el("p", "g-note g-top", `のこり ${goal}`);
+      const field = g.el("div", "g-field");
+      const basket = g.el("div", "g-basket");
+      field.append(basket);
+      g.stage.append(counter, field);
+
+      let bx = 0.5;
+      const place = () => {
+        basket.style.left = `${bx * 100}%`;
+      };
+      place();
+      const follow = ({ x, w }) => {
+        bx = Math.min(0.9, Math.max(0.1, x / w));
+        place();
+      };
+      g.onTap(follow);
+      g.onDrag(follow);
+      g.onKey((key, type) => {
+        if (type !== "down") return;
+        if (key === "ArrowLeft") bx = Math.max(0.1, bx - 0.15);
+        else if (key === "ArrowRight") bx = Math.min(0.9, bx + 0.15);
+        place();
+      });
+
+      const stars = [];
+      let untilSpawn = 0.1;
+      g.frame((dt) => {
+        untilSpawn -= dt;
+        if (untilSpawn <= 0) {
+          untilSpawn += every;
+          const star = { x: 0.1 + Math.random() * 0.8, y: -0.05, el: g.el("span", "g-star"), done: false };
+          star.el.style.left = `${star.x * 100}%`;
+          field.append(star.el);
+          stars.push(star);
+        }
+        const w = field.clientWidth || 1;
+        const h = field.clientHeight || 1;
+        for (const star of stars) {
+          if (star.done) continue;
+          star.y += speed * dt;
+          star.el.style.top = `${star.y * 100}%`;
+          if (Math.abs(star.y - BASKET_Y) * h < 24 && Math.abs(star.x - bx) * w < 50) {
+            star.done = true;
+            star.el.classList.add("is-got");
+            got++;
+            counter.textContent = `のこり ${Math.max(0, goal - got)}`;
+            if (got >= goal) {
+              g.win();
+              return;
+            }
+          } else if (star.y > 1.1) {
+            star.done = true;
+            star.el.remove();
+          }
+        }
+      });
+    },
+  },
+
+  {
+    id: "memory",
+    title: "おぼえて",
+    theme: "lilac",
+    timeout: "lose",
+    instruction: () => "矢印をおぼえて、同じ順にスワイプ！",
+    setup(g) {
+      const len = Math.min(6, 3 + Math.floor(g.level / 2));
+      const seq = Array.from({ length: len }, () => (Math.random() < 0.5 ? "left" : "right"));
+      const showFor = 0.9 + len * 0.25; // 矢印を見せる秒数
+      const row = g.el("div", "g-arrows");
+      const cells = seq.map((dir) => {
+        const cell = g.el("span", "g-arrow", dir === "left" ? "←" : "→");
+        row.append(cell);
+        return cell;
+      });
+      const note = g.el("p", "g-note", "おぼえて…");
+      const lanes = g.el("div", "g-lanes");
+      lanes.append(g.el("span", "g-lane", "← 左"), g.el("span", "g-lane", "右 →"));
+      g.stage.append(row, note, lanes);
+
+      let input = false;
+      let i = 0;
+      g.after(showFor * 1000, () => {
+        input = true;
+        cells.forEach((cell) => {
+          cell.textContent = "?";
+          cell.classList.add("is-hidden");
+        });
+        note.textContent = "スワイプ！";
+      });
+      g.onSwipe(
+        (dir) => {
+          if (!input) return;
+          const ok = dir === seq[i];
+          cells[i].textContent = dir === "left" ? "←" : "→";
+          cells[i].classList.remove("is-hidden");
+          cells[i].classList.add(ok ? "is-right" : "is-wrong");
+          if (!ok) {
+            g.lose();
+            return;
+          }
+          i++;
+          if (i >= len) g.win();
+        },
+        { tapSides: true }
+      );
     },
   },
 ];
