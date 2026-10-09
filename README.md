@@ -43,17 +43,23 @@ YouTubeショートのように縦スワイプで次のゲームへ進み、ゲ�
 ## ファイル構成
 
 ```
-index.html      タイトル画面と上のスコア表示
-css/style.css   見た目（色・柄・各ゲームの部品）
-js/games.js     ミニゲームの一覧（ここに足すとゲームが増える）
-js/app.js       縦スワイプのフィード、READY→GO→結果の進行、COMBO、CM画面、シェア
+index.html            タイトル画面と上のスコア表示
+privacy.html          プライバシーポリシー（公開前に【 】部分を書きかえる）
+ad.html               CM画面に出す広告（広告タグをここに貼る）
+js/config.js          公開するときに書きかえる設定（公開URL・広告）
+js/games.js           ミニゲームの一覧（ここに足すとゲームが増える）
+js/app.js             縦スワイプのフィード、READY→GO→結果の進行、COMBO、CM画面、シェア
+css/style.css         見た目（色・柄・各ゲームの部品）
+ogp.png               SNSでURLを貼ったときに出る画像（1200×630）
+favicon.svg           ブラウザのタブのアイコン
+apple-touch-icon.png  スマホのホーム画面に追加したときのアイコン
 ```
 
-ビルドや `npm install` は不要です。
+ビルドや `npm install` は不要です。`index.html` をブラウザで開くだけで遊べます。
 
 ## ゲームを増やす
 
-`js/games.js` の `GAMES` に1つ足すだけです。ファイル冒頭に、ゲームから使える道具（`g.onTap`、`g.onSwipe`、`g.frame`、`g.win` など）の説明があります。
+`js/games.js` の `GAMES` に1つ足すだけです。ファイル冒頭に、ゲームから使える道具（`g.onTap`、`g.onSwipe`、`g.onFlick`、`g.onDrag`、`g.frame`、`g.win` など）の説明があります。
 タイマーや操作の受付は、ゲーム終了時に自動で片付きます。
 
 調整用の数字は `js/app.js` の先頭にまとまっています。
@@ -62,13 +68,46 @@ js/app.js       縦スワイプのフィード、READY→GO→結果の進行、
 - `AUTO_NEXT_MS`：結果のあと自動で次へ進むまでの時間（0で自動送りなし）
 - `CM_EVERY`：何ゲームごとにCM画面を挟むか
 
-## 広告を入れるとき
+## 公開のしかた（Cloudflare Pages・無料）
 
-8ゲームごとの「CM」画面が広告枠です。`js/app.js` の `createCmSlot()` の中、
-「広告を載せるときは…」というコメントの位置に広告タグを置きます。
+広告をつけて公開するなら Cloudflare Pages がおすすめです（無料プランで商用利用OKとされています。GitHub Pages は商用利用に向きません）。
 
-## 手元で動かす・公開する
+### 1. Cloudflare Pages で公開する
 
-- `index.html` をブラウザで開くだけで遊べます（スマホ確認は `npx serve .` などで）
-- 収益化しない公開なら GitHub Pages、広告や課金をつけるなら Cloudflare Pages（無料・GitHub連携）がおすすめです
-- ベスト記録はその端末のブラウザに保存されます（ログイン不要）
+1. Cloudflare のアカウントを作る（無料）
+2. ダッシュボードの **Workers & Pages** を開く
+3. **Create application** → **Pages** → **Connect to Git** を選ぶ
+4. GitHub でログインし、このリポジトリを選んで **Install & Authorize** → **Begin setup**
+5. **Project name** を決める（これがURLになります。例：`gobyo` → `https://gobyo.pages.dev`）
+6. **Production branch** に、公開したいブランチを選ぶ（`main` にまとめたなら `main`）
+7. ビルドの設定は次のとおりにして **Save and Deploy**
+   - Framework preset：なし（None）
+   - Build command：空のまま
+   - Build output directory：`/`（このリポジトリの一番上）
+8. 数分で `https://（Project name）.pages.dev` に公開されます。以後はブランチにプッシュするたびに自動で更新されます
+
+※ Cloudflare の画面の名前は変わることがあります。見つからないときは Cloudflare の公式ドキュメント「Git integration」を見てください。
+
+### 2. 公開URLが決まったら書きかえる場所
+
+| ファイル | 書きかえる内容 |
+|---|---|
+| `js/config.js` | `url` に公開URL（例：`"https://gobyo.pages.dev/"`）。シェアのURLになります |
+| `index.html` | コメントの中の `og:url` / `og:image` / `twitter:image` を公開URLに書きかえて、コメント記号の行を消す。`twitter:card` を `summary_large_image` に変える |
+| `privacy.html` | 黄色の【 】部分（運営者名、連絡先、使う広告サービス名など） |
+
+### 3. 広告を出す
+
+1. 広告サービス（例：忍者AdMax）に登録して、サイト（公開URL）を登録する
+2. 300×250 の広告枠を作り、広告タグ（`<script ...>` のコード）をコピーする
+3. `ad.html` の「ここから広告タグ」と「ここまで広告タグ」のあいだに貼る
+4. `js/config.js` の `adFrame` を `"ad.html"` にする（広告枠の大きさがちがうときは `adSize` も変える）
+5. プッシュすると、8ゲームごとの「CM」画面に広告が出ます
+6. 広告サービスから `ads.txt` を置くよう案内されたら、このリポジトリの一番上に `ads.txt` を作って中身を貼る
+
+広告は、CM画面が表示されたときに初めて読みこまれます。
+※ Google アドセンスは独自ドメインが実質必要で、広告の置き方のルールも別にあります。使う場合は相談してください。
+
+## 記録について
+
+ベスト記録はその端末のブラウザにだけ保存されます（ログイン不要・サーバーなし）。

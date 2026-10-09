@@ -957,6 +957,39 @@ ol { padding: 0; list-style: none; }
 .cm-best { font: 1.05rem var(--font-dot); }
 .cm-best b { font-size: 1.6rem; font-weight: 400; color: var(--red); }
 .cm-lead { font-size: 0.95rem; }
+/* CM画面の広告（js/config.js で adFrame を設定したときだけ出る） */
+.cm-ad {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: calc(var(--ad-w) + 14px);
+  max-width: 100%;
+  min-height: calc(var(--ad-h) + 14px);
+  padding: 4px;
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--ink) 8%, transparent) 3px 5px),
+    var(--cream);
+}
+.cm-ad iframe { display: block; max-width: 100%; border: 0; }
+.cm-ad-label {
+  position: absolute;
+  top: -11px;
+  left: 12px;
+  padding: 0 8px;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--paper);
+  font-size: 0.7rem;
+}
+.slot-cm.has-ad { padding-inline: 8px; }
+.slot-cm.has-ad .card { padding-inline: 8px; gap: 10px; }
+@media (max-height: 760px) {
+  .slot-cm.has-ad .cm-title, .slot-cm.has-ad .cm-lead { display: none; }
+}
+.cm-link, .title-link { font-size: 0.8rem; color: var(--ink); text-underline-offset: 3px; }
+
 .share { width: 100%; display: flex; flex-wrap: wrap; gap: 10px; }
 .share .btn { flex: 1 1 40%; }
 

@@ -10,6 +10,19 @@
   <meta property="og:title" content="ゴビョー！">
   <meta property="og:description" content="上にスワイプすると次々出てくる、5秒ミニゲームのショート。きみは何連続クリアできる？">
   <meta name="twitter:card" content="summary">
+  <!--
+    公開URLが決まったら、下の3行の「https://公開URL/」を自分のURLに書きかえて、
+    その3行をはさんでいるコメント記号の行（前後の2行）を消してください。
+    また、上の twitter:card の summary を summary_large_image に変えます。
+    （SNSでURLを貼ったときに、大きな画像つきで表示されるようになります）
+  -->
+  <!--
+  <meta property="og:url" content="https://公開URL/">
+  <meta property="og:image" content="https://公開URL/ogp.png">
+  <meta name="twitter:image" content="https://公開URL/ogp.png">
+  -->
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Mochiy+Pop+One&family=Rampart+One&display=swap">
@@ -42,12 +55,14 @@
 
         <p class="title-best">きみのベスト　<b id="titleBest">0</b> COMBO</p>
         <button id="btnStart" class="swipe-hint" type="button">↑ 上にスワイプでスタート</button>
+        <a class="title-link" href="privacy.html">プライバシーポリシー</a>
       </div>
     </section>
   </main>
 
   <p id="toast" class="toast" role="status" hidden></p>
 
+  <script src="js/config.js"></script>
   <script src="js/games.js"></script>
   <script src="js/app.js"></script>
 </body>

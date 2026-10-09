@@ -414,9 +414,12 @@
   }
 
   // ---------- シェア ----------
+  const site = typeof SITE === "object" && SITE ? SITE : {};
+
   function shareUrl() {
     // window.GOBYO_SHARE_URL を文字列で指定すると、そのURLをシェアに使う（"" ならURLなし）
     if (typeof window.GOBYO_SHARE_URL === "string") return window.GOBYO_SHARE_URL;
+    if (site.url) return site.url;
     if (!/^https?:$/.test(location.protocol)) return "";
     return location.origin + location.pathname;
   }
@@ -499,8 +502,21 @@
         : "5秒ミニゲーム「ゴビョー！」\nきみは何連続クリアできる？"
     );
 
-    // 広告を載せるときは、このCM画面の中に広告タグを入れる
-    card.append(bars, el("p", "cm-label", "CM"), title, best, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
+    const privacy = el("a", "cm-link", "プライバシーポリシー");
+    privacy.href = "privacy.html";
+
+    // 広告（js/config.js の adFrame を設定したときだけ）。CM画面が表示されたときに読みこむ
+    let adBox = null;
+    if (site.adFrame) {
+      const [w, h] = site.adSize || [300, 250];
+      adBox = el("div", "cm-ad");
+      adBox.style.setProperty("--ad-w", `${w}px`);
+      adBox.style.setProperty("--ad-h", `${h}px`);
+      adBox.append(el("span", "cm-ad-label", "広告"));
+      section.classList.add("has-ad");
+    }
+
+    card.append(el("p", "cm-label", "CM"), adBox || bars, title, best, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el, privacy);
     section.append(card);
 
     register(section, {
@@ -508,6 +524,17 @@
       activate() {
         bestNum.textContent = String(state.best);
         share.refresh();
+        if (adBox && !adBox.querySelector("iframe")) {
+          const [w, h] = site.adSize || [300, 250];
+          const frame = el("iframe");
+          frame.src = site.adFrame;
+          frame.width = String(w);
+          frame.height = String(h);
+          frame.title = "広告";
+          frame.loading = "lazy";
+          frame.setAttribute("scrolling", "no");
+          adBox.append(frame);
+        }
       },
       deactivate() {},
     });
