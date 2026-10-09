@@ -3,136 +3,52 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>現実をスワイプ</title>
-  <meta name="description" content="届いた〈現実〉を左右にスワイプして仕分け。あなたの霧濃度を判定します。">
-  <meta name="theme-color" content="#c9e4d2">
+  <title>ゴビョー！</title>
+  <meta name="description" content="上にスワイプすると次々出てくる、5秒ミニゲームのショート。連続クリアでコンボをのばそう。">
+  <meta name="theme-color" content="#ffd23f">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="現実をスワイプ">
-  <meta property="og:description" content="届いた〈現実〉を左右にスワイプして仕分け。あなたの霧濃度を判定します。目覚めるな。">
+  <meta property="og:title" content="ゴビョー！">
+  <meta property="og:description" content="上にスワイプすると次々出てくる、5秒ミニゲームのショート。きみは何連続クリアできる？">
   <meta name="twitter:card" content="summary">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Shippori+Mincho+B1:wght@600;800&family=Zen+Maru+Gothic:wght@500;700;900&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Mochiy+Pop+One&family=Rampart+One&display=swap">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="backdrop" aria-hidden="true"><div class="fog"></div></div>
+  <header class="hud">
+    <p class="hud-logo">ゴビョー!</p>
+    <div class="hud-stats">
+      <p id="hudComboChip" class="hud-chip hud-combo"><small>COMBO</small><b id="hudCombo">0</b></p>
+      <p class="hud-chip"><small>BEST</small><b id="hudBest">0</b></p>
+    </div>
+  </header>
 
-  <main class="app">
-    <!-- タイトル -->
-    <section id="screen-title" class="screen screen-title">
-      <p class="plate">霧ヶ町役場　現実逃避課</p>
+  <main id="feed" class="feed">
+    <section id="slotTitle" class="slot slot-title" aria-label="タイトル">
+      <span class="deco deco-ring" aria-hidden="true"></span>
+      <span class="deco deco-tri" aria-hidden="true"></span>
+      <span class="deco deco-dots" aria-hidden="true"></span>
 
-      <div class="logo-wrap">
-        <h1 class="logo"><span class="logo-sub">現実を</span><span class="logo-main">スワイプ</span></h1>
-        <div class="hanko hanko-title" aria-hidden="true"><span>目覚<br>めるな</span></div>
+      <div class="title-card">
+        <h1 class="logo">ゴビョー!</h1>
+        <p class="tagline">5秒ミニゲーム・ショート</p>
+
+        <ol class="howto">
+          <li>上にスワイプすると、次のゲームが始まる</li>
+          <li>お題を5秒以内にクリアしよう</li>
+          <li>連続クリアでCOMBOがのびて、だんだん難しくなる</li>
+        </ol>
+
+        <p class="title-best">きみのベスト　<b id="titleBest">0</b> COMBO</p>
+        <button id="btnStart" class="swipe-hint" type="button">↑ 上にスワイプでスタート</button>
       </div>
-
-      <div class="ticket">
-        <div class="ticket-no">
-          <span class="ticket-label">整理券</span>
-          <b id="ticketNo">062</b>
-        </div>
-        <div class="ticket-body">
-          <p class="ticket-title">霧濃度 判定窓口</p>
-          <p>所要時間　約1分</p>
-          <p>届いた現実　<span id="deckSizeLabel">12</span>通</p>
-        </div>
-      </div>
-
-      <p class="lead">あなたのもとに届いた〈現実〉を、1通ずつ仕分けてください。</p>
-      <ul class="rules">
-        <li><span class="rule-key key-escape">← 左</span><span>現実をスワイプ<small>（見なかったことにする）</small></span></li>
-        <li><span class="rule-key key-face">右 →</span><span>向き合う<small>（開封して対応する）</small></span></li>
-      </ul>
-
-      <button id="btnStart" class="btn btn-primary btn-wide" type="button">整理券を取って はじめる</button>
-      <p class="disclaimer">ドンデコルテさんの漫才「デジタルデトックス」に着想を得た、非公式のファンアプリです。</p>
-    </section>
-
-    <!-- 仕分け -->
-    <section id="screen-game" class="screen screen-game" hidden>
-      <header class="bar">
-        <div class="signboard">
-          <span class="signboard-sub">霧ヶ町役場</span>
-          <span class="signboard-main">現実逃避課</span>
-        </div>
-        <div class="counter" aria-live="polite">残り<b id="remain">12</b>通</div>
-      </header>
-
-      <div class="guru">
-        <div class="guru-badge" aria-hidden="true">霧</div>
-        <div class="bubble-wrap">
-          <span class="guru-name">霧の教祖</span>
-          <p id="bubble" class="bubble" aria-live="polite"></p>
-        </div>
-      </div>
-
-      <div id="stack" class="stack"></div>
-
-      <div class="controls">
-        <button id="btnEscape" class="btn btn-escape" type="button">← 現実をスワイプ</button>
-        <button id="btnFace" class="btn btn-face" type="button">向き合う →</button>
-      </div>
-      <p class="hint">封筒を左右にスワイプしても仕分けできます</p>
-    </section>
-
-    <!-- 判定結果 -->
-    <section id="screen-result" class="screen screen-result" hidden>
-      <article class="notice" aria-labelledby="noticeTitle">
-        <div class="notice-head">
-          <p id="noticeNo">霧現第1234号</p>
-          <p id="noticeDate">令和8年10月9日</p>
-        </div>
-        <p class="notice-to">あなた　殿</p>
-        <div class="notice-from">
-          <p>霧ヶ町役場 現実逃避課長</p>
-          <div class="hanko hanko-result" aria-hidden="true"><span>目覚<br>めるな</span></div>
-        </div>
-
-        <h2 id="noticeTitle" class="notice-title">霧濃度判定通知書</h2>
-        <p class="notice-text">あなたのもとに届いた現実<span id="totalCount">12</span>通の仕分け結果について、下記のとおり判定しましたので通知します。</p>
-        <p class="notice-ki">記</p>
-
-        <dl class="notice-table">
-          <div><dt>逃げた現実</dt><dd><span id="escapedCount">0</span>通</dd></div>
-          <div><dt>向き合った現実</dt><dd><span id="facedCount">0</span>通</dd></div>
-          <div class="row-fog">
-            <dt>霧濃度</dt>
-            <dd>
-              <span class="fog-pct"><b id="fogPct">0</b>%</span>
-              <span class="meter" aria-hidden="true"><span id="meterFill" class="meter-fill"></span></span>
-            </dd>
-          </div>
-          <div class="row-rank"><dt>判定</dt><dd id="rankTitle">—</dd></div>
-        </dl>
-
-        <p class="notice-remark"><span>所見</span><span id="rankRemark"></span></p>
-      </article>
-
-      <section class="escaped" aria-labelledby="escapedHeading">
-        <h3 id="escapedHeading">あなたがスワイプした現実</h3>
-        <ul id="escapedList" class="escaped-list"></ul>
-      </section>
-
-      <section class="share" aria-labelledby="shareHeading">
-        <h3 id="shareHeading">結果を布教する</h3>
-        <div class="share-buttons">
-          <a id="shareX" class="btn btn-ink" href="#" target="_blank" rel="noopener">Xでポスト</a>
-          <a id="shareLine" class="btn btn-green" href="#" target="_blank" rel="noopener">LINEで送る</a>
-          <button id="shareCopy" class="btn btn-face" type="button">文章をコピー</button>
-          <button id="shareNative" class="btn btn-face" type="button" hidden>ほかのアプリ</button>
-        </div>
-      </section>
-
-      <button id="btnRetry" class="btn btn-escape btn-wide" type="button">もう一度 整理券を取る</button>
-      <p class="disclaimer">ドンデコルテさんの漫才「デジタルデトックス」に着想を得た、非公式のファンアプリです。</p>
     </section>
   </main>
 
   <p id="toast" class="toast" role="status" hidden></p>
 
-  <script src="js/content.js"></script>
+  <script src="js/games.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
