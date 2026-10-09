@@ -536,7 +536,11 @@
           adBox.append(frame);
         }
       },
-      deactivate() {},
+      deactivate() {
+        // 画面から外れた広告は外す（長く遊んでも重くならないように。戻ってきたら読みこみ直す）
+        const frame = adBox && adBox.querySelector("iframe");
+        if (frame) frame.remove();
+      },
     });
     return section;
   }
