@@ -107,7 +107,7 @@
             cups[answer].classList.add("is-up");
             cup.classList.add("is-wrong");
             note.textContent = "はずれ…";
-            g.lose();
+            g.lose(`正解は左から${cupAt.indexOf(answer) + 1}番め！`);
           }
         });
       },
@@ -238,15 +238,15 @@
           me.style.top = `${84 - 48 * progress}%`;
         };
         place();
-        const caught = () => {
+        const caught = (why) => {
           oni.classList.add("is-caught");
           note.textContent = "うごいた！";
-          g.lose();
+          g.lose(why);
         };
 
         g.onTap(() => {
           if (phase === "look") {
-            caught();
+            caught("ふりむいた時に押した！");
             return;
           }
           pressing = true;
@@ -274,7 +274,7 @@
             }
           } else {
             if (pressing && pt > grace) {
-              caught();
+              caught("離すのがおそい！");
               return;
             }
             if (pt >= LOOK) startBack();
@@ -358,7 +358,7 @@
             b.classList.add("is-wrong");
             const right = [...row.children].find((c) => c.dataset.v === ink);
             if (right) right.classList.add("is-right");
-            g.lose();
+            g.lose(`正解は「${nameOf[ink]}」！`);
           }
         });
       },
@@ -427,7 +427,7 @@
           const q = gen();
           const sl = q.l.reduce((s, v) => s + v, 0);
           const sr = q.r.reduce((s, v) => s + v, 0);
-          cur = { heavy: sl > sr ? "left" : "right" };
+          cur = { heavy: sl > sr ? "left" : "right", big: Math.max(sl, sr), small: Math.min(sl, sr) };
           fill(L.dish, q.l);
           fill(R.dish, q.r);
           beam.style.setProperty("--a", "0deg");
@@ -441,7 +441,7 @@
             if (lock || !cur) return;
             if (dir !== cur.heavy) {
               tilt(cur.heavy);
-              g.lose();
+              g.lose(`${cur.heavy === "left" ? "左" : "右"}が重い！${cur.big}対${cur.small}`);
               return;
             }
             tilt(cur.heavy);
@@ -514,7 +514,7 @@
             t.classList.add("is-wrong");
             for (const o of tiles) if (o.dataset.lit === "1" && !o.classList.contains("is-right")) o.classList.add("is-reveal");
             note.textContent = "ざんねん…";
-            g.lose();
+            g.lose("光ってないマス！");
           }
         });
       },
@@ -601,7 +601,10 @@
             goals[end].classList.add(end === star ? "is-right" : "is-wrong");
             goals[star].classList.add("is-right");
             if (end === star) g.win();
-            else g.lose();
+            else {
+              const ok = [...Array(N).keys()].find((i) => trace(i).end === star);
+              g.lose(`正解は${ok + 1}番！`);
+            }
           });
         });
       },
@@ -700,13 +703,13 @@
         g.stage.append(cap, bubble, hints);
 
         let cur = null;
-        const fail = (msg) => {
+        const fail = (msg, why) => {
           bubble.textContent = msg;
           bubble.classList.add("is-wrong");
-          g.lose();
+          g.lose(why);
         };
         const checkDeadline = () => {
-          if (cur && cur.real && !cur.answered) fail("おそい！");
+          if (cur && cur.real && !cur.answered) fail("おそい！", "命令におくれた！");
         };
         orders.forEach((o, i) => {
           g.after((T0 + i * interval) * 1000, () => {
@@ -725,9 +728,10 @@
         g.after(4850, checkDeadline);
 
         g.onFlick((dir) => {
-          if (!cur) return fail("まだ命令はないよ！");
-          if (!cur.real || cur.answered) return fail("命令じゃないよ！");
-          if (dir !== cur.dir) return fail("向きがちがう！");
+          if (!cur) return fail("まだ命令はないよ！", "命令の前に動いた！");
+          if (!cur.real) return fail("命令じゃないよ！", "船長の命令じゃない！");
+          if (cur.answered) return fail("命令じゃないよ！", "もう答えたよ！");
+          if (dir !== cur.dir) return fail("向きがちがう！", `正解は「${DIRS[cur.dir]}」！`);
           cur.answered = true;
           bubble.classList.add("is-done");
         });
@@ -773,7 +777,7 @@
           } else if (sum > p) {
             now.textContent = "はらいすぎ！";
             now.classList.add("is-over");
-            g.lose();
+            g.lose(`${sum}円で多すぎ！`);
           }
         });
       },
