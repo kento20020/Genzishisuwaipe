@@ -189,6 +189,8 @@
       },
       deactivate() {
         if (ctl.status === "ready") toIdle(ctl);
+        // 終わった画面の中のゲームの部品は、離れたら片付ける（動き続ける部品が残らないように）
+        if (ctl.status === "done") ctl.stage.replaceChildren();
       },
     };
     retry.addEventListener("click", () => {
@@ -652,12 +654,33 @@
     setNoAds();
   }
 
+  // 遊ぶほど重くならないように、通り過ぎた画面を片付ける
+  const KEEP_BEHIND = 8; // いまの画面から何画面前まで、中身を残すか
+  function tidyBehind(current) {
+    let n = current.section.previousElementSibling;
+    for (let i = 0; n; i++, n = n.previousElementSibling) {
+      const ctl = slots.get(n);
+      if (!ctl) continue;
+      if (i < KEEP_BEHIND) continue;
+      if (n.classList.contains("is-pruned")) break; // これより前は、すでに片付いている
+      observer.unobserve(n);
+      slots.delete(n);
+      n.classList.add("is-pruned");
+      n.replaceChildren();
+    }
+  }
+
   function setActive(ctl) {
     if (!ctl || state.active === ctl) return;
     const prev = state.active;
     state.active = ctl;
-    if (prev) prev.deactivate();
+    if (prev) {
+      prev.deactivate();
+      prev.section.classList.remove("is-current");
+    }
+    ctl.section.classList.add("is-current");
     ctl.activate();
+    tidyBehind(ctl);
     let ahead = 0;
     for (let n = ctl.section.nextElementSibling; n && ahead < 4; n = n.nextElementSibling) ahead++;
     if (ahead < 4) appendGames(6);

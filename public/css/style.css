@@ -491,6 +491,16 @@ ol { padding: 0; list-style: none; }
   45% { opacity: 1; transform: translateY(-2px); }
 }
 
+/* 動くのは、いま表示している画面だけ（通り過ぎた画面で動き続けて重くならないように） */
+.slot:not(.is-current) .swipe-cue-chev,
+.slot:not(.is-current) .swipe-cue-trail,
+.slot:not(.is-current) .swipe-cue-finger,
+.slot:not(.is-current) .overlay.is-clear::before,
+.slot:not(.is-current) .ov-main.pop {
+  animation: none;
+}
+.slot.is-pruned { background-image: none; }
+
 /* READY?の間は、お題を大きく真ん中に出す */
 .overlay.is-ready { background: color-mix(in srgb, var(--cream) 88%, transparent); gap: 14px; }
 .overlay.is-ready .ov-sub {
