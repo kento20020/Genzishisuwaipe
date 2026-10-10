@@ -1,0 +1,350 @@
+/* ミニゲーム追加分（バッチ2）。style.css の部品を流用し、ここには新しい見た目だけを書く */
+
+/* ---------- なんじ？ ---------- */
+.g-clock { filter: drop-shadow(5px 5px 0 var(--ink)); }
+.g-clock-svg { display: block; width: 200px; height: 200px; overflow: visible; }
+.g-clock-face { fill: var(--paper); stroke: var(--ink); stroke-width: 5; }
+.g-clock-tick { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.g-clock-tick.is-major { stroke-width: 5; }
+.g-clock-num { font-family: var(--font-dot); font-size: 24px; fill: var(--ink); }
+.g-clock-hand { stroke: var(--ink); stroke-linecap: round; }
+.g-clock-hand.is-hour { stroke-width: 10; }
+.g-clock-hand.is-min { stroke-width: 5; }
+.g-clock-cap { fill: var(--pink); stroke: var(--ink); stroke-width: 3; }
+
+/* ---------- ゴムとばし ---------- */
+.g-sling-hoop {
+  position: absolute;
+  left: 50%;
+  width: 100px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pink) 35%, var(--paper));
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-sling-hoop.is-hit { background: var(--mint); }
+.g-sling-hoop.is-miss { background: var(--red); animation: shake 0.3s; }
+.g-sling-band { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.g-sling-rubber { stroke: var(--pink); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.g-sling-rubber.is-back { stroke: var(--ink); stroke-width: 8; }
+.g-sling-guide { stroke: var(--ink); stroke-width: 3; stroke-dasharray: 3 7; stroke-linecap: round; opacity: 0; }
+.g-sling-post {
+  position: absolute;
+  width: 16px;
+  height: 66px;
+  translate: -50% 0;
+  border: var(--line) solid var(--ink);
+  border-radius: 7px;
+  background: repeating-linear-gradient(0deg, var(--orange) 0 10px, color-mix(in srgb, var(--orange) 60%, var(--paper)) 10px 20px);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-sling-ball {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--paper), var(--yellow) 55%);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-sling-ball.is-shot { transition: top 0.45s cubic-bezier(0.15, 0.7, 0.35, 1); }
+.g-sling-hint { position: absolute; left: 0; right: 0; bottom: 8px; }
+
+/* ---------- まん中だけ ---------- */
+.g-flanker-holder { display: flex; justify-content: center; width: 100%; }
+.g-arrows.g-flanker-row { --gap: 4px; flex-wrap: nowrap; gap: var(--gap); max-width: none; }
+.g-arrows.g-flanker-row.is-tight { --gap: 2px; }
+.g-flanker-row.pop { animation: pop 0.16s ease-out; }
+.g-flanker-row .g-arrow {
+  flex: none;
+  width: min(46px, calc((100cqw - 32px - (var(--n) - 1) * var(--gap)) / var(--n)));
+  height: 56px;
+  font-size: 1.7rem;
+}
+.g-flanker-row .g-arrow.is-mid { background: var(--yellow); }
+.g-flanker-row .g-arrow.is-wrong { background: var(--red); color: var(--paper); }
+.g-flanker-row .g-arrow.is-right { background: var(--mint); }
+
+/* ---------- 10をつくれ ---------- */
+.g-grid.g-make10-grid {
+  grid-template-columns: repeat(3, 1fr);
+  aspect-ratio: 3 / var(--rows, 2);
+  gap: 10px;
+  width: min(100%, 320px);
+}
+.g-make10-card {
+  display: grid;
+  place-items: center;
+  min-height: 80px;
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 0 5px 0 var(--ink);
+  font: 2.2rem var(--font-dot);
+  cursor: pointer;
+  user-select: none;
+}
+.g-make10-card.is-picked { background: var(--yellow); transform: translateY(3px) scale(0.95); box-shadow: 0 2px 0 var(--ink); }
+.g-make10-card.is-right { background: var(--mint); }
+.g-make10-card.is-wrong { background: var(--red); color: var(--paper); animation: shake 0.3s; }
+.g-make10-card.is-answer { outline: 4px solid var(--ink); outline-offset: 2px; }
+
+/* ---------- ついていけ ---------- */
+.g-follow-ring,
+.g-follow-prog {
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.g-follow-ring {
+  border: 5px solid var(--ink);
+  background: color-mix(in srgb, var(--yellow) 50%, transparent);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-follow-ring.is-moving { background: color-mix(in srgb, var(--pink) 35%, transparent); }
+.g-follow-ring.is-out { background: color-mix(in srgb, var(--red) 70%, transparent); }
+.g-follow-ring.is-done { background: color-mix(in srgb, var(--mint) 80%, transparent); }
+.g-follow-prog {
+  --deg: 0deg;
+  background: conic-gradient(var(--mint) var(--deg), color-mix(in srgb, var(--ink) 16%, transparent) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
+}
+.g-follow-hint {
+  position: absolute;
+  translate: -50% 0;
+  padding: 2px 14px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---------- リズム ---------- */
+.g-beat { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.g-beat-pulse {
+  width: 140px;
+  height: 140px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, var(--paper), color-mix(in srgb, var(--mint) 25%, var(--paper)) 70%);
+  box-shadow: 0 8px 0 var(--ink);
+}
+.g-beat-pulse.is-on { animation: beat-on 0.28s ease-out; }
+.g-beat-pulse.is-me { animation: beat-me 0.22s ease-out; }
+@keyframes beat-on {
+  0% { background: var(--mint); transform: scale(1.18); box-shadow: 0 8px 0 var(--ink), 0 0 0 10px color-mix(in srgb, var(--mint) 50%, transparent); }
+  100% { transform: scale(1); }
+}
+@keyframes beat-me {
+  0% { background: var(--pink); transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.g-beat-dots { display: flex; gap: 8px; }
+.g-beat-dot {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.g-beat-dot.is-gap { margin-left: 14px; }
+.g-beat-dot.is-lit { background: var(--yellow); }
+.g-beat-dot.is-ok { background: var(--mint); }
+.g-beat-dot.is-ng { background: var(--red); }
+.g-beat-diff {
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 50%;
+  translate: -50% 0;
+  font: normal 0.7rem/1.2 var(--font-dot);
+  white-space: nowrap;
+}
+.g-beat-label { min-height: 1.5em; margin-top: 4px; }
+
+/* ---------- なくなった ---------- */
+.g-missing-board {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 2), 64px);
+  gap: 12px;
+  justify-content: center;
+}
+.g-missing-board.is-shuffled { animation: pop 0.2s ease-out; }
+.g-missing-tile {
+  width: 64px;
+  height: 64px;
+  cursor: default;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-missing-tile .g-shape { width: 68%; }
+.g-missing-choices { align-items: stretch; }
+.g-missing-choice { min-height: 70px; }
+.g-missing-choice .g-shape { width: 44px; }
+
+/* ---------- キーパー ---------- */
+.g-keeper-field {
+  border-radius: 15px;
+  background: repeating-linear-gradient(0deg, color-mix(in srgb, var(--lime) 38%, transparent) 0 36px, transparent 36px 72px);
+}
+.g-keeper-goal {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 9%;
+  height: 28%;
+  border: 5px solid var(--paper);
+  border-bottom: 0;
+  box-shadow: 0 0 0 3px var(--ink), inset 0 0 0 3px var(--ink);
+  background:
+    linear-gradient(color-mix(in srgb, var(--ink) 22%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 22%, transparent) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+.g-keeper-man {
+  position: absolute;
+  width: 70px;
+  height: 40px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 12px;
+  background: var(--orange);
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: left 0.09s ease-out;
+}
+.g-keeper-man.is-save { background: var(--mint); }
+.g-keeper-glove {
+  position: absolute;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--yellow);
+}
+.g-keeper-glove.is-l { left: -14px; }
+.g-keeper-glove.is-r { right: -14px; }
+.g-keeper-ball {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--ink) 0 22%, transparent 24%),
+    radial-gradient(circle at 34% 28%, var(--paper) 0 100%);
+  box-shadow: 2px 3px 0 var(--ink);
+}
+.g-keeper-ball.is-goal { background: var(--red); }
+.g-keeper-spot {
+  position: absolute;
+  width: 56px;
+  height: 14px;
+  translate: -50% -50%;
+  margin-top: 22px;
+  border: 2px dashed color-mix(in srgb, var(--ink) 50%, transparent);
+  border-radius: 50%;
+}
+
+/* ---------- まっぷたつ ---------- */
+.g-half-yokan,
+.g-half-piece {
+  height: 70px;
+  border: var(--line) solid var(--ink);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0 16%, transparent 16%),
+    #7b2432;
+}
+.g-half-yokan {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  overflow: hidden;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.g-half-nut {
+  position: absolute;
+  width: 18px;
+  height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: 50% 50% 45% 45%;
+  background: var(--yellow);
+  pointer-events: none;
+}
+.g-half-yokan.is-cut {
+  display: flex;
+  overflow: visible;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+.g-half-piece { flex: none; box-shadow: 4px 4px 0 var(--ink); transition: transform 0.2s ease-out; }
+.g-half-piece.is-l { border-radius: 8px 0 0 8px; transform: translateX(-8px); }
+.g-half-piece.is-r { border-radius: 0 8px 8px 0; transform: translateX(8px); }
+.g-half-yokan.is-ok .g-half-piece { background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0 16%, transparent 16%), #2f8f6f; }
+.g-half-yokan.is-ng .g-half-piece { animation: shake 0.3s; }
+.g-half-yokan.is-miss { animation: shake 0.3s; }
+.g-half-result {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 58px);
+  translate: -50% 0;
+  padding: 2px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  font: 1.35rem var(--font-dot);
+  white-space: nowrap;
+}
+
+/* ---------- ピカピカ ---------- */
+.g-polish-wrap { position: relative; width: 232px; height: 232px; }
+.g-polish-prog {
+  --deg: 0deg;
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(var(--yellow) var(--deg), color-mix(in srgb, var(--ink) 16%, transparent) 0);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
+}
+.g-polish-plate {
+  position: absolute;
+  inset: 16px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 26%, #fff 0 6%, transparent 24%),
+    radial-gradient(circle, var(--paper) 0 36%, color-mix(in srgb, var(--sky) 45%, #fff) 37% 60%, var(--paper) 61%);
+  box-shadow: 4px 6px 0 var(--ink);
+  filter: brightness(0.55) saturate(0.15);
+}
+.g-polish-plate.rub { animation: polish-rub 0.14s ease-out; }
+@keyframes polish-rub { 50% { transform: rotate(-4deg) scale(1.02); } }
+.g-polish-rim {
+  position: absolute;
+  inset: 17%;
+  border: 2px dashed color-mix(in srgb, var(--ink) 40%, transparent);
+  border-radius: 50%;
+}
+.g-polish-spark {
+  position: absolute;
+  translate: -50% -50%;
+  color: var(--yellow);
+  -webkit-text-stroke: 1px var(--ink);
+  paint-order: stroke fill;
+  font-size: 1.6rem;
+  line-height: 1;
+  opacity: 0;
+  scale: 0.3;
+  transition: opacity 0.2s, scale 0.2s;
+  pointer-events: none;
+}
+.g-polish-spark.is-on { opacity: 1; scale: 1; animation: spark 0.5s steps(2) infinite; }
+.g-keeper-count { position: absolute; left: 0; right: 0; bottom: 8px; }
