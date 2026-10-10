@@ -385,6 +385,40 @@ ol { padding: 0; list-style: none; }
   font: 1.15rem var(--font-dot);
 }
 .ov-sub:empty { display: none; }
+/* クリア・失敗のあと：「上にスワイプ」を大きく出す */
+.overlay > .ov-next {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+.ov-next-arrow {
+  font: clamp(3.6rem, 22vw, 5rem)/0.9 var(--font-dot);
+  color: var(--paper);
+  -webkit-text-stroke: 3px var(--ink);
+  paint-order: stroke fill;
+  text-shadow: 0 5px 0 var(--ink);
+  animation: swipe-up 0.9s ease-in-out infinite;
+}
+.ov-next-text {
+  padding: 6px 18px;
+  border: var(--line) solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+  font: clamp(1.1rem, 5.6vw, 1.45rem)/1.2 var(--font-pop);
+}
+@keyframes swipe-up {
+  0% { transform: translateY(14px); opacity: 0.5; }
+  60% { transform: translateY(-10px); opacity: 1; }
+  100% { transform: translateY(-14px); opacity: 0.4; }
+}
+
 /* READY?の間は、お題を大きく真ん中に出す */
 .overlay.is-ready { background: color-mix(in srgb, var(--cream) 88%, transparent); gap: 14px; }
 .overlay.is-ready .ov-sub {
@@ -1033,7 +1067,7 @@ ol { padding: 0; list-style: none; }
 
 /* 動きを減らす設定では、飾りの動きだけ止める（ゲームの動きと導火線は残す） */
 @media (prefers-reduced-motion: reduce) {
-  .logo, .swipe-hint, .next-hint, .g-push-dont, .g-road-line, .overlay.is-clear::before, .ov-main.pop, .hud-chip.bump {
+  .logo, .swipe-hint, .next-hint, .ov-next-arrow, .g-push-dont, .g-road-line, .overlay.is-clear::before, .ov-main.pop, .hud-chip.bump {
     animation: none;
   }
 }

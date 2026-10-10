@@ -131,13 +131,17 @@
     const overlay = el("div", "overlay is-ready");
     const ovMain = el("p", "ov-main", "READY?");
     const ovSub = el("p", "ov-sub");
-    overlay.append(ovMain, ovSub);
+    // クリア・失敗のあとに、「上にスワイプ」を大きく出す
+    const ovNext = el("p", "ov-next");
+    ovNext.hidden = true;
+    ovNext.append(el("span", "ov-next-arrow", "↑"), el("span", "ov-next-text", "上にスワイプで次へ"));
+    overlay.append(ovMain, ovSub, ovNext);
     screen.append(stage, overlay);
 
     const foot = el("div", "card-foot");
     const retry = el("button", "btn btn-small btn-retry", "もう一回");
     retry.type = "button";
-    foot.append(retry, el("span", "next-hint", "↑ スワイプで次へ"));
+    foot.append(retry);
 
     card.append(head, inst, fuse, screen, foot);
     section.append(card);
@@ -152,6 +156,7 @@
       overlay,
       ovMain,
       ovSub,
+      ovNext,
       status: "idle",
       run: 0,
       timers: [],
@@ -192,6 +197,7 @@
     ctl.overlay.className = `overlay is-${mode}`;
     ctl.ovMain.textContent = main;
     ctl.ovSub.textContent = sub || "";
+    ctl.ovNext.hidden = mode !== "clear" && mode !== "miss";
     ctl.overlay.hidden = false;
     restartAnimation(ctl.ovMain, "pop");
   }
