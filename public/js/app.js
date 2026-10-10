@@ -2,8 +2,8 @@
   "use strict";
 
   // ---------- 設定 ----------
-  const DURATION = 7000; // 1ゲームの制限時間（ミリ秒）。時間内にやりとげるタイプのゲーム
-  const SURVIVE_MS = 5000; // 「耐えれば勝ち」タイプ（timeout: "win"）のゲームは、長くすると難しくなるので別に決める
+  const DURATION = 5000; // 1ゲームの制限時間（ミリ秒）。時間内にやりとげるタイプのゲーム
+  const SURVIVE_MS = 5000; // 「耐えれば勝ち」タイプ（timeout: "win"）のゲームの耐える時間。別の長さにもできる
   const READY_MS = 2000; // 「READY?」とお題を大きく見せる時間（ミリ秒）
   const GO_MS = 350; // 「GO!」を見せる時間
   const AUTO_NEXT_MS = 1500; // 結果のあと自動で次へ進むまで（0で自動送りなし）
@@ -503,8 +503,8 @@
     best.append("いまのベスト ", bestNum, " COMBO");
     const share = makeShareRow(() =>
       state.best > 0
-        ? `ゴビョー！で${state.best}連続クリア！\n数秒ミニゲーム、きみは何連続いける？`
-        : "数秒ミニゲーム「ゴビョー！」\nきみは何連続クリアできる？"
+        ? `ゴビョー！で${state.best}連続クリア！\n5秒ミニゲーム、きみは何連続いける？`
+        : "5秒ミニゲーム「ゴビョー！」\nきみは何連続クリアできる？"
     );
 
     const links = el("p", "cm-links");
