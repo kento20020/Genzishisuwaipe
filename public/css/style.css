@@ -1168,7 +1168,7 @@ ol { padding: 0; list-style: none; }
 @keyframes boom { 50% { transform: scale(1.6); background: var(--red); } 100% { transform: scale(1.8); opacity: 0; } }
 
 /* ---------- CM画面（ブラウン管の走査線っぽい柄） ---------- */
-.slot-cm {
+.slot-cm, .slot-ten {
   --theme: var(--lilac);
   background-image: repeating-linear-gradient(0deg, transparent 0 3px, color-mix(in srgb, var(--ink) 14%, transparent) 3px 5px);
 }
@@ -1220,11 +1220,11 @@ ol { padding: 0; list-style: none; }
   background: var(--paper);
   font-size: 0.7rem;
 }
-.slot-cm.has-ad { padding-inline: 8px; }
-.slot-cm.has-ad .card { padding-inline: 8px; gap: 10px; }
+.slot-cm.has-ad, .slot-ten.has-ad { padding-inline: 8px; }
+.slot-cm.has-ad .card, .slot-ten.has-ad .card { padding-inline: 8px; gap: 10px; }
 @media (max-height: 760px) {
-  .slot-cm.has-ad .cm-title, .slot-cm.has-ad .cm-lead { display: none; }
-  .slot-cm.has-ad .cm-label, .slot-cm.has-ad .cm-best { display: none; }
+  .slot-cm.has-ad .cm-title, .slot-cm.has-ad .cm-lead, .slot-ten.has-ad .cm-lead, .slot-ten.has-ad .ten-sub { display: none; }
+  .slot-cm.has-ad .cm-label, .slot-cm.has-ad .cm-best, .slot-ten.has-ad .ten-best { display: none; }
 }
 .cm-link, .title-link { font-size: 0.8rem; color: var(--ink); text-underline-offset: 3px; }
 .cm-links, .title-links { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
@@ -1259,7 +1259,41 @@ ol { padding: 0; list-style: none; }
 
 /* 動きを減らす設定では、飾りの動きだけ止める（ゲームの動きと導火線は残す） */
 @media (prefers-reduced-motion: reduce) {
-  .logo, .next-hint, .howto-demo *, .swipe-cue-chev, .swipe-cue-trail, .swipe-cue-finger, .g-push-dont, .g-road-line, .overlay.is-clear::before, .ov-main.pop, .hud-chip.bump {
+  .logo, .next-hint, .howto-demo *, .ov-howto-bar > span, .swipe-cue-chev, .swipe-cue-trail, .swipe-cue-finger, .g-push-dont, .g-road-line, .overlay.is-clear::before, .ov-main.pop, .hud-chip.bump {
     animation: none;
   }
 }
+
+/* ---------- モード選択（タイトル）・10問の進み具合・結果 ---------- */
+.mode-row { width: 100%; display: flex; gap: 10px; }
+.mode-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 62px;
+  flex-direction: column;
+  gap: 0;
+  padding-inline: 0.4em;
+  font-size: 0.95rem;
+  line-height: 1.15;
+  background: var(--paper);
+}
+.mode-btn b { font: 1.3rem/1.1 var(--font-pop); font-weight: 400; }
+.mode-btn.is-selected { background: var(--yellow); }
+.hud-ten { background: var(--paper); }
+.hud-ten[hidden] { display: none; }
+
+.ten-card { gap: 8px; }
+.ten-title { font: 400 1.25rem/1.3 var(--font-pop); }
+.ten-score { margin: 0; display: flex; align-items: baseline; justify-content: center; gap: 4px; color: var(--ink); }
+.ten-score b { font: 400 clamp(4.2rem, 24vw, 5.8rem)/1 var(--font-dot); color: var(--red); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); }
+.ten-score span { font: 1.9rem var(--font-dot); }
+.ten-sub { margin: 0; font: 1.1rem var(--font-dot); }
+.ten-best { margin: 0; font: 0.95rem var(--font-pop); }
+.ten-best:empty, .ten-weak:empty { display: none; }
+.ten-weak { margin: 0; padding: 4px 12px; border: 2px solid var(--ink); border-radius: 12px; background: var(--paper); font-size: 0.9rem; }
+.ten-endless { width: 100%; min-height: 48px; }
+
+/* 操作の見本：3秒のカウントダウン */
+.ov-howto-bar { width: 100%; height: 12px; border: 2.5px solid var(--ink); border-radius: 999px; background: var(--paper); overflow: hidden; }
+.ov-howto-bar > span { display: block; height: 100%; background: repeating-linear-gradient(135deg, var(--pink) 0 8px, var(--orange) 8px 16px); transform-origin: left center; animation: howto-count 3s linear forwards; }
+@keyframes howto-count { from { transform: scaleX(1); } to { transform: scaleX(0); } }

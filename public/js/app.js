@@ -9,6 +9,10 @@
   const AUTO_NEXT_MS = 1500; // 結果のあと自動で次へ進むまで（0で自動送りなし）
   const LEVEL_EVERY = 4; // 何COMBOごとに難しくなるか
   const SHOW_HOWTO = true; // 初めて出るゲームに、操作の見本を見せるか
+  const HOWTO_MS = 3000; // 操作の見本を見せる時間（ミリ秒）。たったら自動ではじまる
+  const TEN = 10; // 「10問チャレンジ」の問題数
+  const MODE_KEY = "gobyo-mode";
+  const BEST10_KEY = "gobyo-best10";
   const CM_EVERY = 8; // 何ゲームごとにCM画面を挟むか（将来の広告枠）
   const BEST_KEY = "gobyo-best";
   const HASHTAG = "ゴビョー";
@@ -17,13 +21,25 @@
   const NAV_KEYS = ["ArrowUp", "ArrowDown", "PageUp", "PageDown"];
 
   const feed = document.getElementById("feed");
+  const tenChip = document.getElementById("hudTenChip");
+  const tenEl = document.getElementById("hudTen");
   const comboChip = document.getElementById("hudComboChip");
   const comboEl = document.getElementById("hudCombo");
   const bestEl = document.getElementById("hudBest");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const slots = new Map(); // 画面（section）→ 制御オブジェクト
-  const state = { combo: 0, best: loadBest(), active: null, locked: false, gameCount: 0, noAds: false };
+  const state = {
+    combo: 0,
+    best: loadBest(),
+    best10: Number(loadKey(BEST10_KEY)) || 0,
+    mode: loadKey(MODE_KEY) === "ten" ? "ten" : "endless", // "ten"＝10問チャレンジ／"endless"＝無限チャレンジ
+    ten: { results: [], maxCombo: 0 },
+    active: null,
+    locked: false,
+    gameCount: 0,
+    noAds: false,
+  };
 
   // ---------- 小物 ----------
   function el(tag, className, text) {
@@ -44,6 +60,22 @@
 
   const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const levelNow = () => Math.min(5, Math.floor(state.combo / LEVEL_EVERY));
+
+  function loadKey(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveKey(key, value) {
+    try {
+      localStorage.setItem(key, String(value));
+    } catch (_) {
+      // 保存できない環境では、その場かぎり
+    }
+  }
 
   function loadBest() {
     try {
@@ -141,6 +173,8 @@
   function updateHud(bump) {
     comboEl.textContent = String(state.combo);
     bestEl.textContent = String(state.best);
+    tenChip.hidden = state.mode !== "ten";
+    tenEl.textContent = `${state.ten.results.length}/${TEN}`;
     if (bump) restartAnimation(comboChip, "bump");
   }
 
@@ -173,14 +207,17 @@
   }
 
   // ---------- ゲーム画面 ----------
-  function createGameSlot(game, no) {
+  function createGameSlot(game, no, tenIndex) {
     const section = el("section", `slot slot-game theme-${game.theme}`);
     section.setAttribute("aria-label", `No.${no} ${game.title}`);
     const config = game.prepare ? game.prepare(levelNow()) : {};
 
     const card = el("div", "card");
     const head = el("div", "card-head");
-    head.append(el("span", "card-no", `No.${String(no).padStart(3, "0")}`), el("span", "card-title", game.title));
+    head.append(
+      el("span", "card-no", tenIndex !== undefined ? `${tenIndex + 1}/${TEN}問` : `No.${String(no).padStart(3, "0")}`),
+      el("span", "card-title", game.title)
+    );
     const inst = el("p", "inst", game.instruction(levelNow(), config));
     const fuse = el("div", "fuse");
     const fuseBar = el("span");
@@ -206,9 +243,10 @@
     const howto = el("div", "ov-howto");
     howto.hidden = true;
     const howtoDemo = el("div", "ov-howto-demo");
-    const go = el("button", "btn btn-act btn-go", "やってみる");
+    const go = el("button", "btn btn-act btn-go", "すぐはじめる");
     go.type = "button";
-    howto.append(howtoDemo, go);
+    const howtoBar = el("div", "ov-howto-bar"); // 3秒のカウントダウン
+    howto.append(howtoDemo, howtoBar, go);
     overlay.append(ovMain, ovSub, ovHint, howto, ovNext);
     screen.append(stage, overlay);
 
@@ -218,6 +256,7 @@
     const ctl = {
       section,
       game,
+      tenIndex, // 10問チャレンジのときだけ（何問目か）
       config,
       inst,
       fuseBar,
@@ -229,6 +268,7 @@
       ovNext,
       howto,
       howtoDemo,
+      howtoBar,
       status: "idle",
       run: 0,
       timers: [],
@@ -251,6 +291,7 @@
     });
     go.addEventListener("click", () => {
       if (ctl.status !== "howto" || state.active !== ctl) return;
+      stopAll(ctl); // 3秒の自動スタートのタイマーを止める
       markHowto(ctl.game.id);
       startReady(ctl);
     });
@@ -281,7 +322,8 @@
     ctl.ovMain.textContent = main;
     ctl.ovSub.textContent = sub || "";
     ctl.ovHint.textContent = hint || "";
-    ctl.retryBtn.hidden = mode !== "miss"; // 「もう一回」は失敗のときだけ（クリアをやり直してCOMBOを稼げないように）
+    // 「もう一回」は失敗のときだけ（クリアをやり直してCOMBOを稼げないように）。10問チャレンジではやり直しなし
+    ctl.retryBtn.hidden = mode !== "miss" || ctl.tenIndex !== undefined;
     ctl.ovNext.hidden = mode !== "clear" && mode !== "miss";
     if (mode !== "howto") ctl.howto.hidden = true;
     ctl.overlay.hidden = false;
@@ -324,6 +366,11 @@
     ctl.stage.replaceChildren();
     ctl.inst.textContent = ctl.game.instruction(levelNow(), ctl.config);
     resetFuse(ctl);
+    if (ctl.tenIndex !== undefined) {
+      // 10問チャレンジでは、READYの間に次へ逃げられないよう、スクロールを固定する
+      if (Math.abs(feed.scrollTop - ctl.section.offsetTop) > 1) feed.scrollTop = ctl.section.offsetTop;
+      setLocked(true);
+    }
     if (needsHowto(ctl.game)) {
       showHowto(ctl);
       return;
@@ -342,6 +389,14 @@
   // 初めて出るゲーム：ルールを読む時間と、腕前を試す時間を分ける
   function showHowto(ctl) {
     ctl.status = "howto";
+    // 3秒たったら自動ではじまる（「すぐはじめる」で早く始められる）
+    ctl.howtoBar.replaceChildren(el("span"));
+    ctl.howtoBar.firstChild.style.animationDuration = `${HOWTO_MS}ms`;
+    later(ctl, HOWTO_MS, () => {
+      if (ctl.status !== "howto" || state.active !== ctl) return;
+      markHowto(ctl.game.id);
+      startReady(ctl);
+    });
     const kind = HOWTO[ctl.game.id];
     showOverlay(ctl, "howto", "はじめてのゲーム", ctl.inst.textContent, HOWTO_LABEL[kind] || "");
     const demo = makeDemo(kind);
@@ -396,6 +451,11 @@
       sub = reason || pick(MISS_LINES);
       hint = reason ? pick(MISS_LINES) : "";
     }
+    if (ctl.tenIndex !== undefined && !ctl.scored) {
+      ctl.scored = true;
+      state.ten.results.push({ id: ctl.game.id, title: ctl.game.title, won });
+    }
+    state.ten.maxCombo = Math.max(state.ten.maxCombo, state.combo);
     updateHud(won);
     showOverlay(ctl, won ? "clear" : "miss", won ? "CLEAR!" : "MISS…", sub, hint);
     setLocked(false);
@@ -608,6 +668,35 @@
   }
 
   // ---------- CM画面（将来ここに広告を置く） ----------
+  // 広告（js/config.js の adFrame を設定したときだけ）。画面が表示されたときに読みこみ、外れたら外す
+  function makeAd(section) {
+    if (!site.adFrame || state.noAds) return null;
+    const [w, h] = site.adSize || [300, 250];
+    const box = el("div", "cm-ad");
+    box.style.setProperty("--ad-w", `${w}px`);
+    box.style.setProperty("--ad-h", `${h}px`);
+    box.append(el("span", "cm-ad-label", "広告"));
+    section.classList.add("has-ad");
+    return {
+      box,
+      load() {
+        if (box.querySelector("iframe")) return;
+        const frame = el("iframe");
+        frame.src = site.adFrame;
+        frame.width = String(w);
+        frame.height = String(h);
+        frame.title = "広告";
+        frame.loading = "lazy";
+        frame.setAttribute("scrolling", "no");
+        box.append(frame);
+      },
+      unload() {
+        const frame = box.querySelector("iframe");
+        if (frame) frame.remove();
+      },
+    };
+  }
+
   function createCmSlot() {
     const section = el("section", "slot slot-cm");
     section.setAttribute("aria-label", "CM");
@@ -643,23 +732,14 @@
       links.append(law);
     }
 
-    // 広告（js/config.js の adFrame を設定したときだけ）。CM画面が表示されたときに読みこむ
-    let adBox = null;
-    if (site.adFrame) {
-      const [w, h] = site.adSize || [300, 250];
-      adBox = el("div", "cm-ad");
-      adBox.style.setProperty("--ad-w", `${w}px`);
-      adBox.style.setProperty("--ad-h", `${h}px`);
-      adBox.append(el("span", "cm-ad-label", "広告"));
-      section.classList.add("has-ad");
-    }
+    const ad = makeAd(section);
 
     // 共有のまえに、まず「つづきを遊ぶ」（上にスワイプでも進める）
     const go = el("button", "btn btn-go", "つづきを遊ぶ ↑");
     go.type = "button";
     go.addEventListener("click", goNext);
 
-    card.append(el("p", "cm-label", "CM"), adBox || bars, title, best, go, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
+    card.append(el("p", "cm-label", "CM"), ad ? ad.box : bars, title, best, go, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
     if (buy) card.append(buy);
     card.append(links);
     section.append(card);
@@ -669,22 +749,70 @@
       activate() {
         bestNum.textContent = String(state.best);
         share.refresh();
-        if (adBox && !adBox.querySelector("iframe")) {
-          const [w, h] = site.adSize || [300, 250];
-          const frame = el("iframe");
-          frame.src = site.adFrame;
-          frame.width = String(w);
-          frame.height = String(h);
-          frame.title = "広告";
-          frame.loading = "lazy";
-          frame.setAttribute("scrolling", "no");
-          adBox.append(frame);
-        }
+        if (ad) ad.load();
       },
       deactivate() {
         // 画面から外れた広告は外す（長く遊んでも重くならないように。戻ってきたら読みこみ直す）
-        const frame = adBox && adBox.querySelector("iframe");
-        if (frame) frame.remove();
+        if (ad) ad.unload();
+      },
+    });
+    return section;
+  }
+
+  // ---------- 10問チャレンジの結果画面 ----------
+  function createTenResultSlot() {
+    const section = el("section", "slot slot-ten");
+    section.setAttribute("aria-label", "10問チャレンジ けっか");
+    const card = el("div", "card cm-card ten-card");
+    const score = el("p", "ten-score");
+    const scoreNum = el("b", null, "0");
+    score.append(scoreNum, el("span", null, `/${TEN}`));
+    const sub = el("p", "ten-sub");
+    const best = el("p", "ten-best");
+    const weak = el("p", "ten-weak");
+    let wins = 0;
+    const share = makeShareRow(
+      () => `ゴビョー！10問チャレンジで${wins}/${TEN}問クリア！最高${state.ten.maxCombo}COMBO。\nきみは何問いける？`
+    );
+    const again = el("button", "btn btn-go", `もう一度 ${TEN}問`);
+    again.type = "button";
+    again.addEventListener("click", () => startMode("ten"));
+    const endless = el("button", "btn ten-endless", "無限チャレンジへ");
+    endless.type = "button";
+    endless.addEventListener("click", () => startMode("endless"));
+    const links = el("p", "cm-links");
+    const privacy = el("a", "cm-link", "プライバシーポリシー");
+    privacy.href = "privacy";
+    links.append(privacy);
+    const ad = makeAd(section);
+
+    card.append(el("h2", "ten-title", `${TEN}問チャレンジ けっか`), score, sub, best, weak);
+    if (ad) card.append(ad.box);
+    card.append(again, endless, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el, links);
+    section.append(card);
+
+    register(section, {
+      section,
+      activate() {
+        const results = state.ten.results;
+        wins = results.filter((r) => r.won).length;
+        scoreNum.textContent = String(wins);
+        sub.textContent = `最高 ${state.ten.maxCombo} COMBO`;
+        if (wins > state.best10) {
+          state.best10 = wins;
+          saveKey(BEST10_KEY, wins);
+          best.textContent = wins > 0 ? "NEW BEST!" : "";
+        } else {
+          best.textContent = `${TEN}問ベスト ${state.best10}/${TEN}`;
+        }
+        const missed = [...new Set(results.filter((r) => !r.won).map((r) => r.title))];
+        weak.textContent = results.length === 0 ? "" : missed.length === 0 ? "ぜんぶクリア！パーフェクト！" : `にがて：${missed.slice(0, 3).join("・")}${missed.length > 3 ? "…" : ""}`;
+        share.refresh();
+        if (ad) ad.load();
+        syncTitle();
+      },
+      deactivate() {
+        if (ad) ad.unload();
       },
     });
     return section;
@@ -698,6 +826,51 @@
       // 広告なしパックを買った人には、CM画面を出さない
       if (CM_EVERY > 0 && !state.noAds && state.gameCount % CM_EVERY === 0) feed.append(createCmSlot());
     }
+  }
+
+  // ---------- モード（10問チャレンジ／無限チャレンジ） ----------
+  function resetFeed() {
+    for (const [section] of [...slots]) {
+      if (section === titleSection) continue;
+      observer.unobserve(section);
+      slots.delete(section);
+    }
+    for (const node of [...feed.children]) if (node !== titleSection) node.remove();
+    if (state.active && state.active.section !== titleSection) state.active = null;
+    setLocked(false);
+    bag = [];
+    lastGameId = null;
+    state.combo = 0;
+    state.gameCount = 0;
+    state.ten = { results: [], maxCombo: 0 };
+  }
+
+  function buildFeed(mode) {
+    state.mode = mode;
+    saveKey(MODE_KEY, mode);
+    resetFeed();
+    if (mode === "ten") {
+      for (let i = 0; i < TEN; i++) feed.append(createGameSlot(drawGame(), i + 1, i));
+      feed.append(createTenResultSlot());
+    } else {
+      appendGames(6);
+    }
+    updateHud();
+    syncTitle();
+  }
+
+  // タイトルの「10問チャレンジ」「無限チャレンジ」から。いつもランダムな出題
+  function startMode(mode) {
+    const fromTitle = state.active && state.active.section === titleSection;
+    buildFeed(mode);
+    const first = titleSection.nextElementSibling;
+    if (fromTitle) {
+      scrollToSection(first);
+      return;
+    }
+    // 結果の画面から：いちど先頭へ戻してから、最初のゲームへ
+    feed.scrollTop = 0;
+    requestAnimationFrame(() => requestAnimationFrame(() => scrollToSection(first)));
   }
 
   // ---------- 広告なしパック（購入済みの確認） ----------
@@ -777,7 +950,7 @@
     tidyBehind(ctl);
     let ahead = 0;
     for (let n = ctl.section.nextElementSibling; n && ahead < 4; n = n.nextElementSibling) ahead++;
-    if (ahead < 4) appendGames(6);
+    if (state.mode === "endless" && ahead < 4) appendGames(6);
   }
 
   const observer = new IntersectionObserver(
@@ -817,19 +990,28 @@
   // ---------- 起動 ----------
   const titleSection = document.getElementById("slotTitle");
   const titleBest = document.getElementById("titleBest");
+  const titleBest10 = document.getElementById("titleBest10");
+  const btnTen = document.getElementById("btnTen");
+  const btnEndless = document.getElementById("btnEndless");
+  function syncTitle() {
+    titleBest.textContent = String(state.best);
+    titleBest10.textContent = state.best10 > 0 ? `${state.best10}/${TEN}` : "-";
+    btnTen.classList.toggle("is-selected", state.mode === "ten");
+    btnEndless.classList.toggle("is-selected", state.mode === "endless");
+  }
   register(titleSection, {
     section: titleSection,
     activate() {
-      titleBest.textContent = String(state.best);
+      syncTitle();
     },
     deactivate() {},
   });
+  btnTen.addEventListener("click", () => startMode("ten"));
+  btnEndless.addEventListener("click", () => startMode("endless"));
   document.getElementById("titleCue").append(makeSwipeCue());
   // マウスのある端末（パソコン）には、その操作を案内する
   if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) document.getElementById("titlePc").hidden = false;
   document.getElementById("btnStart").addEventListener("click", goNext);
   checkEntitlement();
-  titleBest.textContent = String(state.best);
-  updateHud();
-  appendGames(6);
+  buildFeed(state.mode);
 })();

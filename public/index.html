@@ -27,7 +27,8 @@
   <header class="hud">
     <p class="hud-logo">ゴビョー!</p>
     <div class="hud-stats">
-      <p id="hudComboChip" class="hud-chip hud-combo"><small>COMBO</small><b id="hudCombo">0</b></p>
+      <p id="hudTenChip" class="hud-chip hud-ten" hidden><small>問</small><b id="hudTen">0/10</b></p>
+            <p id="hudComboChip" class="hud-chip hud-combo"><small>COMBO</small><b id="hudCombo">0</b></p>
       <p class="hud-chip"><small>BEST</small><b id="hudBest">0</b></p>
     </div>
   </header>
@@ -43,12 +44,16 @@
         <p class="tagline">5秒ミニゲーム・ショート</p>
 
         <ol class="howto">
-          <li>上にスワイプすると、次のゲームが始まる</li>
+          <li>モードを選ぶか、上にスワイプでスタート</li>
           <li>お題を見て、5秒以内にクリアしよう</li>
           <li>連続クリアでCOMBOがのびて、だんだん難しくなる</li>
         </ol>
 
-        <p class="title-best">きみのベスト　<b id="titleBest">0</b> COMBO</p>
+        <p class="title-best">ベスト　10問 <b id="titleBest10">-</b>　無限 <b id="titleBest">0</b> COMBO</p>
+        <div class="mode-row">
+          <button id="btnTen" class="btn mode-btn" type="button"><b>10問</b>チャレンジ</button>
+          <button id="btnEndless" class="btn mode-btn" type="button"><b>無限</b>チャレンジ</button>
+        </div>
         <button id="btnStart" class="title-start" type="button"><span id="titleCue" class="title-cue"></span><span class="swipe-hint">上にスワイプでスタート</span></button>
         <p id="titlePc" class="title-pc" hidden>パソコン：クリックで開始　↑↓キーで進む　←→キー・スペースで操作　マウスのドラッグでもOK</p>
         <p class="title-links"><a class="title-link" href="privacy">プライバシーポリシー</a><a class="title-link" href="tokushoho">特定商取引法に基づく表記</a></p>
