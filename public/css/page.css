@@ -1,0 +1,88 @@
+/* 配置: 1カラムの読みもの。ゲームと同じ色・線で、本文は読みやすい標準の書体 */
+:root {
+  --cream: #fff3dc;
+  --paper: #fffaf0;
+  --ink: #2b1e3f;
+  --pink: #ff6fae;
+  --yellow: #ffd23f;
+  --font-logo: "Rampart One", "Mochiy Pop One", "Hiragino Maru Gothic ProN", sans-serif;
+  --font-pop: "Mochiy Pop One", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --font-body: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--yellow);
+  background-image: radial-gradient(circle, color-mix(in srgb, var(--paper) 45%, transparent) 0 5px, transparent 6px);
+  background-size: 30px 30px;
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.8;
+}
+main {
+  max-width: 680px;
+  margin-inline: auto;
+  padding-inline: 16px;
+  padding-block: 24px 48px;
+}
+.back {
+  display: inline-block;
+  margin-bottom: 16px;
+  padding: 6px 16px 4px;
+  border: 3px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+  color: var(--pink);
+  font: 1.2rem/1.2 var(--font-logo);
+  text-decoration: none;
+}
+article {
+  padding: 24px 20px 28px;
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  background: var(--paper);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+h1 { margin: 0 0 8px; font: 1.6rem/1.4 var(--font-pop); text-wrap: balance; }
+h2 {
+  margin: 28px 0 6px;
+  padding-left: 10px;
+  border-left: 6px solid var(--pink);
+  font: 1.1rem/1.5 var(--font-pop);
+}
+p, ul { margin: 0 0 10px; }
+ul { padding-left: 1.3em; }
+.lead { color: color-mix(in srgb, var(--ink) 75%, var(--paper)); }
+.fill { background: var(--yellow); padding: 0 4px; border-radius: 4px; font-weight: 700; }
+.date { margin-top: 28px; text-align: right; }
+/* 表（特定商取引法のページ） */
+.spec { margin: 14px 0 0; border: 2px solid var(--ink); border-radius: 10px; overflow: hidden; }
+.spec > div { display: grid; grid-template-columns: 8.5em 1fr; }
+.spec > div + div { border-top: 1.5px solid var(--ink); }
+.spec dt { padding: 8px 10px; background: color-mix(in srgb, var(--yellow) 35%, var(--paper)); font-weight: 700; font-size: 0.9rem; border-right: 1.5px solid var(--ink); }
+.spec dd { margin: 0; padding: 8px 12px; min-width: 0; overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .spec > div { grid-template-columns: 1fr; }
+  .spec dt { border-right: 0; border-bottom: 1.5px solid var(--ink); }
+}
+
+/* ボタン・状態（購入完了ページ） */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 48px; padding: 0.55em 1.4em;
+  border: 3px solid var(--ink); border-radius: 999px;
+  background: var(--paper); color: var(--ink);
+  font: 0.98rem/1.2 var(--font-pop); text-decoration: none;
+  box-shadow: 0 4px 0 var(--ink); cursor: pointer;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.btn-pink { background: var(--pink); color: var(--paper); }
+.actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.status { padding: 14px 16px; border: 3px solid var(--ink); border-radius: 14px; background: var(--paper); font-weight: 700; }
+.status.is-ok { background: #c9f2e6; }
+.status.is-ng { background: #ffd9d9; }
+.restore { margin-top: 14px; padding: 10px 12px; border: 2px dashed var(--ink); border-radius: 10px; font-size: 0.85rem; overflow-wrap: anywhere; }
+.footer-links { margin-top: 18px; font-size: 0.85rem; display: flex; gap: 14px; flex-wrap: wrap; }
+.footer-links a { color: var(--ink); text-underline-offset: 3px; }

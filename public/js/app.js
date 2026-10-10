@@ -21,7 +21,7 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const slots = new Map(); // 画面（section）→ 制御オブジェクト
-  const state = { combo: 0, best: loadBest(), active: null, locked: false, gameCount: 0 };
+  const state = { combo: 0, best: loadBest(), active: null, locked: false, gameCount: 0, noAds: false };
 
   // ---------- 小物 ----------
   function el(tag, className, text) {
@@ -502,8 +502,22 @@
         : "5秒ミニゲーム「ゴビョー！」\nきみは何連続クリアできる？"
     );
 
+    const links = el("p", "cm-links");
     const privacy = el("a", "cm-link", "プライバシーポリシー");
-    privacy.href = "privacy.html";
+    privacy.href = "privacy";
+    links.append(privacy);
+
+    // 広告なしパックの購入ボタン（js/config.js の shop.paymentLink を設定したときだけ）
+    const shop = site.shop || {};
+    let buy = null;
+    if (shop.paymentLink) {
+      buy = el("a", "btn btn-buy", `広告をなくす（${shop.price || "500円"}）`);
+      buy.href = shop.paymentLink;
+      buy.rel = "noopener";
+      const law = el("a", "cm-link", "特定商取引法に基づく表記");
+      law.href = "tokushoho";
+      links.append(law);
+    }
 
     // 広告（js/config.js の adFrame を設定したときだけ）。CM画面が表示されたときに読みこむ
     let adBox = null;
@@ -516,7 +530,9 @@
       section.classList.add("has-ad");
     }
 
-    card.append(el("p", "cm-label", "CM"), adBox || bars, title, best, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el, privacy);
+    card.append(el("p", "cm-label", "CM"), adBox || bars, title, best, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
+    if (buy) card.append(buy);
+    card.append(links);
     section.append(card);
 
     register(section, {
@@ -550,8 +566,57 @@
     for (let i = 0; i < count; i++) {
       state.gameCount++;
       feed.append(createGameSlot(drawGame(), state.gameCount));
-      if (CM_EVERY > 0 && state.gameCount % CM_EVERY === 0) feed.append(createCmSlot());
+      // 広告なしパックを買った人には、CM画面を出さない
+      if (CM_EVERY > 0 && !state.noAds && state.gameCount % CM_EVERY === 0) feed.append(createCmSlot());
     }
+  }
+
+  // ---------- 広告なしパック（購入済みの確認） ----------
+  const NOADS_KEY = "gobyo-noads";
+
+  function setNoAds() {
+    if (state.noAds) return;
+    state.noAds = true;
+    // すでに作ってあるCM画面をなくす（いま表示中のものは残す）
+    for (const [section, ctl] of [...slots]) {
+      if (section.classList.contains("slot-cm") && state.active !== ctl) {
+        observer.unobserve(section);
+        slots.delete(section);
+        section.remove();
+      }
+    }
+  }
+
+  // 保存してある購入の印を、サーバーで確かめる。通信できないときは、印を信じる
+  async function checkEntitlement() {
+    let token = "";
+    try {
+      token = localStorage.getItem(NOADS_KEY) || "";
+    } catch (_) {
+      token = "";
+    }
+    if (!token) return;
+    try {
+      const res = await fetch("/api/check", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.ok === false) {
+          try {
+            localStorage.removeItem(NOADS_KEY); // にせの印は捨てる
+          } catch (_) {
+            // 消せなくても動作には影響しない
+          }
+          return;
+        }
+      }
+    } catch (_) {
+      // 通信できなかったとき
+    }
+    setNoAds();
   }
 
   function setActive(ctl) {
@@ -610,6 +675,7 @@
     deactivate() {},
   });
   document.getElementById("btnStart").addEventListener("click", goNext);
+  checkEntitlement();
   titleBest.textContent = String(state.best);
   updateHud();
   appendGames(6);

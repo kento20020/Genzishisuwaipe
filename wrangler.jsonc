@@ -1,0 +1,13 @@
+{
+  // Cloudflare の Worker 名（公開URLの先頭 gobyo.〇〇.workers.dev と同じ名前にする）
+  "name": "gobyo",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    // 公開するファイルはすべて public/ に入れる
+    "directory": "./public",
+    "binding": "ASSETS",
+    // /api/ だけ Worker が受けもつ。それ以外は静的ファイルをそのまま返す（無料・無制限）
+    "run_worker_first": ["/api/*"]
+  }
+}

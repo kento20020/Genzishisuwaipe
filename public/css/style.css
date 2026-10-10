@@ -989,6 +989,8 @@ ol { padding: 0; list-style: none; }
   .slot-cm.has-ad .cm-title, .slot-cm.has-ad .cm-lead { display: none; }
 }
 .cm-link, .title-link { font-size: 0.8rem; color: var(--ink); text-underline-offset: 3px; }
+.cm-links, .title-links { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
+.btn-buy { width: 100%; background: var(--yellow); }
 
 .share { width: 100%; display: flex; flex-wrap: wrap; gap: 10px; }
 .share .btn { flex: 1 1 40%; }

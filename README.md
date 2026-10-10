@@ -43,71 +43,87 @@ YouTubeショートのように縦スワイプで次のゲームへ進み、ゲ�
 ## ファイル構成
 
 ```
-index.html            タイトル画面と上のスコア表示
-privacy.html          プライバシーポリシー（公開前に【 】部分を書きかえる）
-ad.html               CM画面に出す広告（広告タグをここに貼る）
-js/config.js          公開するときに書きかえる設定（公開URL・広告）
-js/games.js           ミニゲームの一覧（ここに足すとゲームが増える）
-js/app.js             縦スワイプのフィード、READY→GO→結果の進行、COMBO、CM画面、シェア
-css/style.css         見た目（色・柄・各ゲームの部品）
-ogp.png               SNSでURLを貼ったときに出る画像（1200×630）
-favicon.svg           ブラウザのタブのアイコン
-apple-touch-icon.png  スマホのホーム画面に追加したときのアイコン
+public/                    公開するファイル（サイト本体）。ここだけが世の中に公開される
+  index.html               タイトル画面と上のスコア表示
+  privacy.html             プライバシーポリシー（【 】部分を自分の情報に書きかえる）
+  tokushoho.html           特定商取引法に基づく表記（【 】部分を自分の情報に書きかえる）
+  thanks.html              購入完了ページ（支払い後にここへ移動して、購入を確認する）
+  ad.html                  CM画面に出す広告（広告タグをここに貼る）
+  js/config.js             公開するときに書きかえる設定（公開URL・広告・購入ボタン）
+  js/games.js              ミニゲームの一覧（ここに足すとゲームが増える）
+  js/app.js                縦スワイプのフィード、進行、COMBO、CM画面、シェア、購入済みの確認
+  js/thanks.js             購入完了ページの動き
+  css/style.css            ゲームの見た目
+  css/page.css             プライバシー・特商法・購入完了ページの見た目
+  ogp.png / favicon.svg / apple-touch-icon.png   SNS用の画像とアイコン
+worker/index.js            購入を確認するサーバー側の処理（/api/ だけ担当）
+wrangler.jsonc             Cloudflare への公開設定（Worker名・公開フォルダ）
 ```
 
-ビルドや `npm install` は不要です。`index.html` をブラウザで開くだけで遊べます。
+ゲームだけなら、ビルドも `npm install` も不要です。`public/index.html` をブラウザで開くだけで遊べます。
 
 ## ゲームを増やす
 
-`js/games.js` の `GAMES` に1つ足すだけです。ファイル冒頭に、ゲームから使える道具（`g.onTap`、`g.onSwipe`、`g.onFlick`、`g.onDrag`、`g.frame`、`g.win` など）の説明があります。
+`public/js/games.js` の `GAMES` に1つ足すだけです。ファイル冒頭に、ゲームから使える道具（`g.onTap`、`g.onSwipe`、`g.onFlick`、`g.onDrag`、`g.frame`、`g.win` など）の説明があります。
 タイマーや操作の受付は、ゲーム終了時に自動で片付きます。
 
-調整用の数字は `js/app.js` の先頭にまとまっています。
+調整用の数字は `public/js/app.js` の先頭にまとまっています。
 
 - `DURATION`：制限時間（5000ミリ秒）
 - `AUTO_NEXT_MS`：結果のあと自動で次へ進むまでの時間（0で自動送りなし）
 - `CM_EVERY`：何ゲームごとにCM画面を挟むか
 
-## 公開のしかた（Cloudflare Pages・無料）
+## 公開のしかた（Cloudflare Workers・無料）
 
-広告をつけて公開するなら Cloudflare Pages がおすすめです（無料プランで商用利用OKとされています。GitHub Pages は商用利用に向きません）。
+GitHub のこのリポジトリを Cloudflare につなぐと、プッシュするたびに自動で公開されます。公開設定は `wrangler.jsonc` に書いてあります。
 
-### 1. Cloudflare Pages で公開する
+- Cloudflare の **Workers & Pages** で、このリポジトリを Git からつないで作る
+- ビルドの **Deploy command** は `npx wrangler deploy`（空でもよい）、**Build command** は空
+- Worker の名前は `wrangler.jsonc` の `name`（`gobyo`）と同じにする。ちがうとデプロイに失敗します
+- 公開されたURLを `public/js/config.js` の `url` と、`public/index.html` の `og:url` / `og:image` / `twitter:image` に入れる
 
-1. Cloudflare のアカウントを作る（無料）
-2. ダッシュボードの **Workers & Pages** を開く
-3. **Create application** → **Pages** → **Connect to Git** を選ぶ
-4. GitHub でログインし、このリポジトリを選んで **Install & Authorize** → **Begin setup**
-5. **Project name** を決める（これがURLになります。例：`gobyo` → `https://gobyo.pages.dev`）
-6. **Production branch** に、公開したいブランチを選ぶ（`main` にまとめたなら `main`）
-7. ビルドの設定は次のとおりにして **Save and Deploy**
-   - Framework preset：なし（None）
-   - Build command：空のまま
-   - Build output directory：`/`（このリポジトリの一番上）
-8. 数分で `https://（Project name）.pages.dev` に公開されます。以後はブランチにプッシュするたびに自動で更新されます
-
-※ Cloudflare の画面の名前は変わることがあります。見つからないときは Cloudflare の公式ドキュメント「Git integration」を見てください。
-
-### 2. 公開URLが決まったら書きかえる場所
-
-| ファイル | 書きかえる内容 |
-|---|---|
-| `js/config.js` | `url` に公開URL（例：`"https://gobyo.pages.dev/"`）。シェアのURLになります |
-| `index.html` | コメントの中の `og:url` / `og:image` / `twitter:image` を公開URLに書きかえて、コメント記号の行を消す。`twitter:card` を `summary_large_image` に変える |
-| `privacy.html` | 黄色の【 】部分（運営者名、連絡先、使う広告サービス名など） |
-
-### 3. 広告を出す
+## 広告を出す
 
 1. 広告サービス（例：忍者AdMax）に登録して、サイト（公開URL）を登録する
 2. 300×250 の広告枠を作り、広告タグ（`<script ...>` のコード）をコピーする
-3. `ad.html` の「ここから広告タグ」と「ここまで広告タグ」のあいだに貼る
-4. `js/config.js` の `adFrame` を `"ad.html"` にする（広告枠の大きさがちがうときは `adSize` も変える）
+3. `public/ad.html` の「ここから広告タグ」と「ここまで広告タグ」のあいだに貼る
+4. `public/js/config.js` の `adFrame` を `"ad.html"` にする（広告枠の大きさがちがうときは `adSize` も変える）
 5. プッシュすると、8ゲームごとの「CM」画面に広告が出ます
-6. 広告サービスから `ads.txt` を置くよう案内されたら、このリポジトリの一番上に `ads.txt` を作って中身を貼る
+6. 広告サービスから `ads.txt` を置くよう案内されたら、`public/ads.txt` を作って中身を貼る
 
-広告は、CM画面が表示されたときに読みこまれ、スワイプして画面から外れると外れます（何百ゲーム遊んでも広告がたまって重くならないように）。
-※ Google アドセンスは独自ドメインが実質必要で、広告の置き方のルールも別にあります。使う場合は相談してください。
+広告は、CM画面が表示されたときに読みこまれ、画面から外れると外れます。
+※ Google アドセンスは独自ドメインが実質必要で、広告の置き方のルールも別にあります。
+
+## 広告なしパック（500円・買い切り）を売る
+
+仕組み：Stripe の支払いリンクで支払い → `thanks` ページに移動 → Worker が Stripe に「この支払いは完了したか」と確認 →
+購入済みの印（署名つきのトークン）をブラウザに保存 → 以後はCM画面（広告）が出なくなる。ログインはありません。
+
+### あなたがやること
+
+1. **Stripe に登録**する（本人確認・銀行口座）。最初は **テストモード** で試す
+2. Stripe で **商品「広告なしパック」・価格 500円（1回払い）** を作り、**支払いリンク（Payment Link）** を作る
+3. 支払いリンクの **After the payment（支払い後）** で「自分のWebサイトにリダイレクト」を選び、次のURLを入れる
+   `https://（公開URL）/thanks?session_id={CHECKOUT_SESSION_ID}`
+4. 支払いリンクのID（`plink_...`）と、Stripe の **秘密キー**（`sk_test_...`）を用意する
+5. Cloudflare の Worker `gobyo` → **Settings** → **Variables and Secrets** に次を入れる
+   - `STRIPE_SECRET_KEY`：種類は **Secret**。秘密キーを入れる（**チャットやGitHubには絶対に書かない**）
+   - `PAYMENT_LINK_ID`：`plink_...`（この支払いリンクだけを購入として認める）
+   - `SIGNING_SECRET`：（任意）Secret。長いランダムな文字列。入れなければ秘密キーで署名します
+6. `public/js/config.js` の `shop.paymentLink` に、支払いリンクのURL（`https://buy.stripe.com/...`）を入れてプッシュ
+   → CM画面に「広告をなくす（500円）」ボタンが出ます（空のあいだは出ません）
+7. **テストモードで購入を試す**（テストカード `4242 4242 4242 4242`）。広告が出なくなること、ページを開き直しても購入済みのままであることを確認
+8. 問題なければ、Stripe を **本番モード** に切りかえ、本番用の支払いリンク・秘密キー・`PAYMENT_LINK_ID` に入れかえる
+9. `public/tokushoho.html` と `public/privacy.html` の黄色の【 】部分を、自分の情報に書きかえる
+
+### 知っておくこと
+
+- 購入済みの印はそのブラウザに保存されます。ブラウザのデータを消したときは、購入完了ページ（`/thanks?session_id=...`）のアドレスを開き直すと戻せます。購入完了ページにそのアドレスが表示されるので、保存しておいてもらいます
+- 購入完了ページのアドレスを他人に渡すと、その人も使えてしまいます（ログインなしの方式の限界です）
+- 返金しても、保存済みの印は自動では無効になりません
+- ブラウザの中で動く以上、技術のある人が自分の端末で広告を消すことは止められません
+- 無料枠：静的ファイルは無制限。`/api/` は1日10万リクエストまで
 
 ## 記録について
 
-ベスト記録はその端末のブラウザにだけ保存されます（ログイン不要・サーバーなし）。
+ベスト記録と購入済みの印は、その端末のブラウザにだけ保存されます（ログイン不要）。

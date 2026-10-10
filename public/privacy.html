@@ -8,67 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Rampart+One&display=swap">
-  <style>
-    /* 配置: 1カラムの読みもの。ゲームと同じ色・線で、本文は読みやすい標準の書体 */
-    :root {
-      --cream: #fff3dc;
-      --paper: #fffaf0;
-      --ink: #2b1e3f;
-      --pink: #ff6fae;
-      --yellow: #ffd23f;
-      --font-logo: "Rampart One", "Mochiy Pop One", "Hiragino Maru Gothic ProN", sans-serif;
-      --font-pop: "Mochiy Pop One", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif;
-      --font-body: "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
-      color-scheme: light;
-    }
-    *, *::before, *::after { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--yellow);
-      background-image: radial-gradient(circle, color-mix(in srgb, var(--paper) 45%, transparent) 0 5px, transparent 6px);
-      background-size: 30px 30px;
-      color: var(--ink);
-      font-family: var(--font-body);
-      line-height: 1.8;
-    }
-    main {
-      max-width: 680px;
-      margin-inline: auto;
-      padding-inline: 16px;
-      padding-block: 24px 48px;
-    }
-    .back {
-      display: inline-block;
-      margin-bottom: 16px;
-      padding: 6px 16px 4px;
-      border: 3px solid var(--ink);
-      border-radius: 999px;
-      background: var(--paper);
-      box-shadow: 3px 3px 0 var(--ink);
-      color: var(--pink);
-      font: 1.2rem/1.2 var(--font-logo);
-      text-decoration: none;
-    }
-    article {
-      padding: 24px 20px 28px;
-      border: 3px solid var(--ink);
-      border-radius: 22px;
-      background: var(--paper);
-      box-shadow: 6px 6px 0 var(--ink);
-    }
-    h1 { margin: 0 0 8px; font: 1.6rem/1.4 var(--font-pop); text-wrap: balance; }
-    h2 {
-      margin: 28px 0 6px;
-      padding-left: 10px;
-      border-left: 6px solid var(--pink);
-      font: 1.1rem/1.5 var(--font-pop);
-    }
-    p, ul { margin: 0 0 10px; }
-    ul { padding-left: 1.3em; }
-    .lead { color: color-mix(in srgb, var(--ink) 75%, var(--paper)); }
-    .fill { background: var(--yellow); padding: 0 4px; border-radius: 4px; font-weight: 700; }
-    .date { margin-top: 28px; text-align: right; }
-  </style>
+  <link rel="stylesheet" href="css/page.css">
 </head>
 <body>
   <main>
@@ -95,20 +35,26 @@
       <p>本サイトでは、利用状況を知るためにアクセス解析を使う場合があります。集められるデータは統計としてあつかい、個人を特定するものではありません。</p>
       <p>利用しているアクセス解析：<span class="fill">【使う場合はサービス名。使わない場合はこの項目を消す】</span></p>
 
-      <h2>4. 外部サービスへのシェア</h2>
+      <h2>4. 有料パック（広告なしパック）の購入</h2>
+      <p>有料パックの決済には、決済サービス「Stripe」を利用しています。カード番号などの支払い情報は、Stripeが取りあつかい、本サイトの運営者は受け取りません。</p>
+      <p>購入の確認のために、購入時に発行される決済の番号（セッションID）を使います。購入済みであることを示す印（トークン）は、お使いのブラウザの中（ローカルストレージ）に保存されます。</p>
+      <p>購入についてのお問い合わせのために、Stripeを通じて、お客様のメールアドレスなどを運営者が確認することがあります。</p>
+
+      <h2>5. 外部サービスへのシェア</h2>
       <p>シェアボタンを押すと、X（旧Twitter）やLINEなど外部サービスのページが開きます。そこでの情報の取りあつかいは、各サービスの方針にしたがいます。</p>
 
-      <h2>5. 免責事項</h2>
+      <h2>6. 免責事項</h2>
       <p>本サイトの利用によって生じたトラブルや損害について、運営者は責任を負いかねます。本サイトの内容は、予告なく変更・終了することがあります。</p>
 
-      <h2>6. お問い合わせ</h2>
+      <h2>7. お問い合わせ</h2>
       <p>運営者：<span class="fill">【運営者名またはニックネーム】</span></p>
       <p>連絡先：<span class="fill">【Xのアカウント、問い合わせフォームのURL、メールアドレスなど】</span></p>
 
-      <h2>7. このポリシーの変更</h2>
+      <h2>8. このポリシーの変更</h2>
       <p>このポリシーは、必要に応じて変更することがあります。変更した場合は、このページでお知らせします。</p>
 
       <p class="date">制定：2026年10月9日</p>
+      <p class="footer-links"><a href="tokushoho">特定商取引法に基づく表記</a></p>
     </article>
   </main>
 </body>

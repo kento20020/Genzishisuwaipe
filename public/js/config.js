@@ -13,4 +13,12 @@ const SITE = {
 
   // 広告の大きさ [横, 縦]。広告サービスで作った広告枠の大きさに合わせます。
   adSize: [300, 250],
+
+  // 広告なしパック（買い切り）の設定。paymentLink が空のあいだは、購入ボタンは表示されません。
+  // Stripe で作った支払いリンクのURL（https://buy.stripe.com/...）をここに入れます。
+  // ※支払い後の移動先は、このサイトの /thanks?session_id={CHECKOUT_SESSION_ID} にします（README参照）
+  shop: {
+    paymentLink: "",
+    price: "500円",
+  },
 };
