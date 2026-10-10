@@ -1,0 +1,399 @@
+/* ミニゲーム 第3弾の見た目（games-b3.js 用） */
+
+/* ---------- なわとび ---------- */
+.g-jumprope-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; }
+.g-jumprope-rope { stroke: var(--ink); stroke-width: 5; }
+.g-jumprope-rope.is-back { opacity: 0.35; }
+.g-jumprope-ground {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  height: 0;
+  border-top: 5px solid var(--ink);
+}
+.g-jumprope-ground::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 5px;
+  height: 14px;
+  background: repeating-linear-gradient(90deg, var(--ink) 0 3px, transparent 3px 14px);
+  opacity: 0.35;
+}
+.g-jumprope-man { position: absolute; left: 50%; width: 44px; height: 60px; margin-left: -22px; z-index: 1; }
+.g-jumprope-head {
+  position: absolute;
+  left: 10px;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--yellow);
+}
+.g-jumprope-body {
+  position: absolute;
+  left: 5px;
+  top: 22px;
+  width: 34px;
+  height: 38px;
+  border: var(--line) solid var(--ink);
+  border-radius: 12px 12px 5px 5px;
+  background: var(--pink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+.g-jumprope-man.is-air .g-jumprope-body { background: var(--mint); }
+.g-jumprope-man.is-trip .g-jumprope-body { background: var(--red); }
+.g-jumprope-man.is-trip { animation: shake 0.3s; }
+
+/* ---------- すべれ！ ---------- */
+.g-slide-note {
+  padding: 3px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  font: 1.25rem var(--font-dot);
+}
+.g-slide-board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  width: min(306px, 70cqh, 94cqw);
+  aspect-ratio: 1;
+  border: var(--line) solid var(--ink);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.g-slide-cell {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+}
+.g-slide-cell.is-wall {
+  background: repeating-linear-gradient(135deg, var(--ink) 0 6px, color-mix(in srgb, var(--ink) 78%, var(--lilac)) 6px 12px);
+  border-color: var(--ink);
+}
+.g-slide-cell.is-goal { background: color-mix(in srgb, var(--yellow) 45%, var(--paper)); }
+.g-slide-star { left: 50%; top: 50%; width: 76%; height: 76%; }
+.g-slide-star::before { inset: 14%; }
+.g-slide-ball {
+  position: absolute;
+  width: calc(100% / var(--n));
+  height: calc(100% / var(--n));
+  pointer-events: none;
+  z-index: 2;
+}
+.g-slide-ball-body {
+  position: absolute;
+  inset: 11%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, var(--paper) 0 14%, var(--pink) 16%);
+  box-shadow: 2px 3px 0 var(--ink);
+}
+.g-slide-ball.is-goal .g-slide-ball-body { background: radial-gradient(circle at 32% 30%, var(--paper) 0 14%, var(--mint) 16%); }
+.g-slide-ball.is-out .g-slide-ball-body { background: var(--red); }
+
+/* ---------- かたはめ ---------- */
+.g-fit-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  translate: 0 -50%;
+}
+.g-fit-slot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: var(--line) dashed var(--ink);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.g-fit-slot .g-shape { --c: var(--ink); opacity: 0.25; width: 62%; }
+.g-fit-slot.is-right { background: var(--mint); border-style: solid; }
+.g-fit-slot.is-wrong { background: var(--red); border-style: solid; animation: shake 0.3s; }
+.g-fit-slot.is-answer { background: var(--yellow); border-style: solid; }
+.g-fit-piece {
+  position: absolute;
+  width: 70px;
+  height: 70px;
+  translate: -50% -50%;
+  filter: drop-shadow(3px 3px 0 var(--ink));
+  z-index: 2;
+}
+.g-fit-piece .g-shape { display: block; width: 100%; }
+.g-fit-piece.is-home { transition: left 0.18s ease-out, top 0.18s ease-out; }
+.g-fit-piece.is-held { scale: 1.12; }
+
+/* ---------- めでおえ ---------- */
+.g-mot-dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--sky);
+  box-shadow: 0 3px 0 var(--ink);
+  font: 1.45rem/1 var(--font-dot);
+}
+.g-mot-dot.is-mark { background: var(--yellow); }
+.g-mot-dot.is-mark::after { content: "★"; }
+.g-mot.is-stopped .g-mot-dot { cursor: pointer; }
+.g-mot-dot.is-right { background: var(--mint); }
+.g-mot-dot.is-right::after { content: "★"; }
+.g-mot-dot.is-wrong { background: var(--red); animation: shake 0.3s; }
+
+/* ---------- つぎはなに ---------- */
+.g-next-seq { display: flex; gap: 6px; max-width: 100%; }
+.g-next-cell {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  border: var(--line) solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+  font: 1.55rem/1 var(--font-dot);
+  font-variant-numeric: tabular-nums;
+}
+.g-next-cell .g-shape { width: 68%; }
+.g-next-cell.is-q { background: var(--yellow); font-family: var(--font-pop); }
+.g-next-choices .g-choice { min-height: 76px; }
+.g-next-choices .g-shape { width: 54%; }
+
+/* ---------- リフティング ---------- */
+.g-lift-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-top: 5px solid var(--ink);
+  background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--orange) 55%, var(--paper)) 0 8px, var(--paper) 8px 16px);
+}
+.g-lift-ball {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, var(--ink) 0 17%, transparent 18%),
+    radial-gradient(circle at 50% 50%, transparent 0 52%, var(--ink) 53% 58%, var(--paper) 59%);
+  box-shadow: 3px 4px 0 var(--ink);
+  pointer-events: none;
+}
+.g-lift-ball.hit { animation: g-lift-hit 0.14s ease-out; }
+.g-lift-ball.is-fall { background: var(--red); }
+@keyframes g-lift-hit { 40% { scale: 1.22 0.82; } }
+
+/* ---------- なんにん？ ---------- */
+.g-bus-start {
+  min-height: 2.8rem;
+  margin: 0;
+  font: 2.1rem/1.3 var(--font-dot);
+  text-align: center;
+}
+.g-bus-start.is-small { font-size: 1.15rem; }
+.g-bus-scene { position: relative; width: min(300px, 100%); height: 150px; flex: none; }
+.g-bus-body {
+  position: absolute;
+  left: 10%;
+  top: 14px;
+  width: 80%;
+  height: 110px;
+  border: var(--line) solid var(--ink);
+  border-radius: 18px 18px 8px 8px;
+  background: linear-gradient(to bottom, var(--pink) 0 60%, var(--paper) 60% 70%, var(--pink) 70%);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.g-bus-windows { position: absolute; top: 12px; display: flex; gap: 6px; width: 38%; height: 34px; }
+.g-bus-windows.is-l { left: 4%; }
+.g-bus-windows.is-r { right: 4%; }
+.g-bus-window { flex: 1; border: var(--line) solid var(--ink); border-radius: 6px; background: var(--sky); }
+.g-bus-door {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  width: 38px;
+  height: 72px;
+  margin-left: -19px;
+  border: var(--line) solid var(--ink);
+  border-radius: 8px 8px 0 0;
+  background: repeating-linear-gradient(90deg, var(--yellow) 0 17px, var(--ink) 17px 19px);
+}
+.g-bus-wheel {
+  position: absolute;
+  top: 108px;
+  width: 30px;
+  height: 30px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--paper) 0 28%, var(--ink) 30%);
+  z-index: 1;
+}
+.g-bus-wheel.is-l { left: 20%; }
+.g-bus-wheel.is-r { right: 20%; }
+.g-bus-person {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  width: 26px;
+  height: 38px;
+  margin-left: -13px;
+  z-index: 3;
+  animation: g-bus-in var(--dur, 0.5s) linear both;
+}
+.g-bus-person[data-move="out"] { animation-name: g-bus-out; }
+.g-bus-person.is-second { translate: -20px -6px; }
+.g-bus-head {
+  position: absolute;
+  left: 6px;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.g-bus-torso {
+  position: absolute;
+  left: 2px;
+  top: 13px;
+  width: 22px;
+  height: 25px;
+  border: 2.5px solid var(--ink);
+  border-radius: 8px 8px 3px 3px;
+  background: var(--c);
+}
+@keyframes g-bus-in {
+  0% { left: 0%; opacity: 1; }
+  75% { left: 50%; opacity: 1; scale: 1; }
+  100% { left: 50%; opacity: 0; scale: 0.5; }
+}
+@keyframes g-bus-out {
+  0% { left: 50%; opacity: 0; scale: 0.5; }
+  20% { opacity: 1; scale: 1; }
+  80% { opacity: 1; }
+  100% { left: 100%; opacity: 0; scale: 1; }
+}
+
+/* ---------- はぐるま ---------- */
+.g-gear-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.g-gear-teeth { stroke: var(--ink); }
+.g-gear-body { fill: var(--mint); stroke: var(--ink); stroke-width: 3; }
+.g-gear-hub { fill: var(--ink); }
+.g-gear-spoke { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; fill: none; }
+.g-gear.is-first .g-gear-body { fill: var(--yellow); }
+.g-gear.is-odd .g-gear-body { fill: var(--sky); }
+.g-gear.is-even .g-gear-body { fill: var(--mint); }
+.g-gear.is-last .g-gear-body { fill: var(--pink); }
+.g-gear.is-deco .g-gear-body { fill: color-mix(in srgb, var(--ink) 14%, var(--cream)); }
+.g-gear.is-deco .g-gear-teeth { stroke: color-mix(in srgb, var(--ink) 50%, var(--cream)); }
+.g-gear.is-deco .g-gear-hub,
+.g-gear.is-deco .g-gear-spoke { opacity: 0.4; }
+.g-gear-spin {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: g-gear-cw 3s linear infinite paused;
+}
+.g-gear-spin.is-ccw { animation-name: g-gear-ccw; }
+.g-gear-spin.is-run { animation-play-state: running; }
+@keyframes g-gear-cw { to { transform: rotate(360deg); } }
+@keyframes g-gear-ccw { to { transform: rotate(-360deg); } }
+.g-gear-mark { font: 26px var(--font-dot); fill: var(--ink); pointer-events: none; }
+.g-gear-mark.is-q { font-size: 30px; fill: var(--paper); stroke: var(--ink); stroke-width: 3px; paint-order: stroke fill; }
+.g-gear-lanes .g-lane { padding: 4px 10px; font-size: 1rem; white-space: nowrap; }
+.g-gear-lanes .g-lane.is-right { background: var(--mint); }
+.g-gear-lanes .g-lane.is-wrong { background: var(--red); color: var(--paper); }
+
+/* ---------- かがみ ---------- */
+.g-mirror-view { display: flex; align-items: center; gap: 8px; }
+.g-mirror-view.is-h { flex-direction: column; gap: 6px; }
+.g-mirror-pattern,
+.g-mirror-mini {
+  display: grid;
+  grid-template-columns: repeat(var(--n), 1fr);
+  grid-template-rows: repeat(var(--n), 1fr);
+  background: var(--paper);
+  border: var(--line) solid var(--ink);
+  pointer-events: none;
+}
+.g-mirror-pattern { width: 120px; height: 120px; border-radius: 6px; box-shadow: 4px 4px 0 var(--ink); }
+.g-mirror-mini { width: 72px; height: 72px; border-width: 2.5px; border-radius: 5px; }
+.g-mirror-cell { border: 1px solid color-mix(in srgb, var(--ink) 18%, transparent); }
+.g-mirror-cell.is-on { background: var(--pink); box-shadow: inset 0 0 0 2px var(--ink); }
+.g-mirror-line { filter: drop-shadow(1px 1px 0 var(--ink)); }
+.g-mirror-view.is-v .g-mirror-line { width: 0; height: 150px; border-left: 6px dotted var(--sky); }
+.g-mirror-view.is-h .g-mirror-line { width: 160px; height: 0; border-top: 6px dotted var(--sky); }
+.g-mirror-choices .g-choice { min-height: 92px; padding: 6px; }
+
+/* ---------- ふわふわ ---------- */
+.g-hover-zone {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 0;
+  border: var(--line) dashed var(--ink);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sky) 45%, transparent);
+}
+.g-hover-zone.is-out { background: color-mix(in srgb, var(--red) 50%, transparent); }
+.g-hover-floaty {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 40px;
+  height: 40px;
+  margin-left: -20px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50% 50% 50% 50% / 46% 46% 54% 54%;
+  background: var(--pink);
+  box-shadow: 3px 3px 0 var(--ink);
+  z-index: 2;
+}
+.g-hover-floaty::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--paper);
+}
+.g-hover-floaty::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+  background: var(--ink);
+}
+.g-hover-floaty.is-up { scale: 1.1; background: var(--yellow); }
+.g-hover-banner {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 14%;
+  margin: 0;
+  font: 2rem var(--font-pop);
+  color: var(--yellow);
+  -webkit-text-stroke: 3px var(--ink);
+  paint-order: stroke fill;
+  text-align: center;
+  text-shadow: 3px 3px 0 var(--pink);
+}
+.g-gear.is-first .g-gear-spoke, .g-gear.is-first .g-gear-hub,
+.g-gear.is-last .g-gear-spoke, .g-gear.is-last .g-gear-hub { display: none; }

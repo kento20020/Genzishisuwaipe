@@ -584,7 +584,10 @@ const GAMES = [
         untilSpawn -= dt;
         if (untilSpawn <= 0) {
           untilSpawn += every;
-          const star = { x: 0.1 + Math.random() * 0.8, y: -0.05, el: g.el("span", "g-star"), done: false };
+          // いまのカゴの位置から離れたところに出す（カゴを動かさなくても偶然入る、を防ぐ）
+          let sx = 0.1 + Math.random() * 0.8;
+          for (let tries = 0; tries < 20 && Math.abs(sx - bx) < 0.22; tries++) sx = 0.1 + Math.random() * 0.8;
+          const star = { x: sx, y: -0.05, el: g.el("span", "g-star"), done: false };
           star.el.style.left = `${star.x * 100}%`;
           field.append(star.el);
           stars.push(star);
