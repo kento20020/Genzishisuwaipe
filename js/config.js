@@ -5,7 +5,7 @@
 const SITE = {
   // 公開したURL（例: "https://gobyo.pages.dev/"）。
   // シェアするときに付くURLになります。空のままなら、開いているページのURLを使います。
-  url: "",
+  url: "https://gobyo.kento-dev.workers.dev/",
 
   // CM画面に広告を出すときは "ad.html" にします。
   // 先に ad.html の中に、広告サービスでもらった広告タグを貼りつけてください。
