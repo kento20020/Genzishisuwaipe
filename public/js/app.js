@@ -60,6 +60,28 @@
     }
   }
 
+  // 「上にスワイプ」の見本：指が触れて、上へなぞって、離れる動き＋上向きの矢印
+  function makeSwipeCue() {
+    const NS = "http://www.w3.org/2000/svg";
+    const cue = el("span", "swipe-cue");
+    cue.setAttribute("aria-hidden", "true");
+    const chevs = el("span", "swipe-cue-chevs");
+    for (let i = 0; i < 3; i++) {
+      const svg = document.createElementNS(NS, "svg");
+      svg.setAttribute("viewBox", "0 0 44 24");
+      svg.setAttribute("class", "swipe-cue-chev");
+      for (const cls of ["edge", "fill"]) {
+        const path = document.createElementNS(NS, "path");
+        path.setAttribute("d", "M5 19 L22 5 L39 19");
+        path.setAttribute("class", cls);
+        svg.append(path);
+      }
+      chevs.append(svg);
+    }
+    cue.append(chevs, el("span", "swipe-cue-trail"), el("span", "swipe-cue-finger"));
+    return cue;
+  }
+
   function restartAnimation(node, className) {
     node.classList.remove(className);
     void node.offsetWidth;
@@ -134,7 +156,7 @@
     // クリア・失敗のあとに、「上にスワイプ」を大きく出す
     const ovNext = el("p", "ov-next");
     ovNext.hidden = true;
-    ovNext.append(el("span", "ov-next-arrow", "↑"), el("span", "ov-next-text", "上にスワイプで次へ"));
+    ovNext.append(makeSwipeCue(), el("span", "ov-next-text", "上にスワイプで次へ"));
     overlay.append(ovMain, ovSub, ovNext);
     screen.append(stage, overlay);
 
@@ -685,6 +707,7 @@
     },
     deactivate() {},
   });
+  document.getElementById("titleCue").append(makeSwipeCue());
   document.getElementById("btnStart").addEventListener("click", goNext);
   checkEntitlement();
   titleBest.textContent = String(state.best);
