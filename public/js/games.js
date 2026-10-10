@@ -12,7 +12,7 @@
  *     g.level           むずかしさ（0〜5）
  *     g.config          prepare が返した設定
  *     g.el(tag, class, text)  要素を作る
- *     g.win() / g.lose()      成功・失敗で終了
+ *     g.win() / g.lose("理由")  成功・失敗で終了（失敗には理由を付ける。結果画面に出る）
  *     g.after(ms, fn)         ms後に1回だけ実行
  *     g.frame(fn)             毎フレーム fn(経過秒の差分, 開始からの秒) を実行
  *     g.onTap(fn)             画面に触れた瞬間 fn({x, y, w, h, target})（スペースキーでも反応）
@@ -54,7 +54,7 @@ function gNearWrongs(answer, count, spread) {
 }
 
 // 選択肢をタップしたときの判定。canAnswer() が false のあいだは受け付けない
-function gOnChoice(g, row, answer, canAnswer = () => true) {
+function gOnChoice(g, row, answer, canAnswer = () => true, reason = (a) => `正解は${a}！`) {
   g.onTap(({ target }) => {
     const b = target && target.closest && target.closest(".g-choice");
     if (!b || !row.contains(b) || !canAnswer()) return;
@@ -65,7 +65,7 @@ function gOnChoice(g, row, answer, canAnswer = () => true) {
     } else {
       const right = [...row.children].find((c) => c.dataset.v === String(answer));
       if (right) right.classList.add("is-right");
-      g.lose();
+      g.lose(reason(answer));
     }
   });
 }
@@ -130,7 +130,7 @@ const GAMES = [
         watch.textContent = t.toFixed(2);
         note.textContent = `ずれ ${(t - target >= 0 ? "+" : "") + (t - target).toFixed(2)}秒`;
         if (Math.abs(t - target) <= tolerance) g.win();
-        else g.lose();
+        else g.lose(t < target ? `はやすぎ！${t.toFixed(2)}秒` : `おそすぎ！${t.toFixed(2)}秒`);
       });
     },
   },
@@ -171,7 +171,7 @@ const GAMES = [
           g.stage.append(ghost);
           if (dir !== current) {
             item.style.visibility = "hidden";
-            g.lose();
+            g.lose(current === "left" ? "●は左へ！" : "■は右へ！");
             return;
           }
           done++;
@@ -242,7 +242,7 @@ const GAMES = [
           rock.el.style.top = `${rock.y * 100}%`;
           if (rock.lane === lane && Math.abs(rock.y - CAR_Y) * h < 46) {
             car.classList.add("crash");
-            g.lose();
+            g.lose("ぶつかった！");
             return;
           }
         }
@@ -271,7 +271,7 @@ const GAMES = [
       g.onTap(() => {
         btn.classList.add("pressed");
         tease.textContent = "押しちゃった…";
-        g.lose();
+        g.lose("押しちゃった！");
       });
     },
   },
@@ -305,7 +305,7 @@ const GAMES = [
         } else {
           tile.classList.add("is-wrong");
           grid.children[odd].classList.add("is-right");
-          g.lose();
+          g.lose("そこは同じ色！");
         }
       });
     },
@@ -340,7 +340,7 @@ const GAMES = [
         mark.classList.add(ok ? "is-hit" : "is-miss");
         note.textContent = ok ? "ど真ん中！" : "おしい！";
         if (ok) g.win();
-        else g.lose();
+        else g.lose(pos < 0.5 ? "左にずれた！" : "右にずれた！");
       });
     },
   },
@@ -447,7 +447,7 @@ const GAMES = [
           g.win();
         } else {
           note.textContent = size < zMin ? "ちいさすぎ！" : "おおきすぎ！";
-          g.lose();
+          g.lose(size < zMin ? "ちいさすぎ！" : "おおきすぎ！");
         }
       });
       g.frame((dt) => {
@@ -459,7 +459,7 @@ const GAMES = [
           released = true;
           balloon.classList.add("is-burst");
           note.textContent = "パーン！";
-          g.lose();
+          g.lose("ふくらませすぎ！");
         }
       });
     },
@@ -485,13 +485,13 @@ const GAMES = [
       });
       g.after((redAt + windowSec) * 1000, () => {
         lamp.textContent = "おそい！";
-        g.lose();
+        g.lose("おそすぎた！");
       });
       g.onTap(() => {
         if (redTime === null) {
           lamp.classList.add("is-foul");
           lamp.textContent = "フライング";
-          g.lose();
+          g.lose("フライング！");
           return;
         }
         note.textContent = `${Math.round(performance.now() - redTime)}ミリ秒`;
@@ -537,7 +537,7 @@ const GAMES = [
         const ok = mode === "win" ? beats(me, cpu) : mode === "lose" ? beats(cpu, me) : me === cpu;
         pickEl.classList.add(ok ? "is-right" : "is-wrong");
         if (ok) g.win();
-        else g.lose();
+        else g.lose(beats(me, cpu) ? "かっちゃった！" : beats(cpu, me) ? "まけちゃった！" : "あいこだった！");
       });
     },
   },
@@ -655,7 +655,7 @@ const GAMES = [
           cells[i].classList.remove("is-hidden");
           cells[i].classList.add(ok ? "is-right" : "is-wrong");
           if (!ok) {
-            g.lose();
+            g.lose(`${i + 1}こ目は${seq[i] === "left" ? "←" : "→"}！`);
             return;
           }
           i++;
@@ -700,7 +700,7 @@ const GAMES = [
           tile.classList.add("is-wrong");
           tile.textContent = ARROWS[current];
           ghost.remove();
-          g.lose();
+          g.lose(`正解は${ARROWS[current]}！`);
           return;
         }
         done++;
@@ -757,7 +757,7 @@ const GAMES = [
         row.hidden = false;
         shown = true;
       });
-      gOnChoice(g, row, answer, () => shown);
+      gOnChoice(g, row, answer, () => shown, (a) => `正解は${a}こ！`);
     },
   },
 
@@ -892,7 +892,7 @@ const GAMES = [
           over = true;
           trail.classList.add("is-out");
           note.textContent = "はみ出した！";
-          g.lose();
+          g.lose("はみ出した！");
         } else if (Math.hypot(x - goal[0], y - goal[1]) <= road * 0.6) {
           over = true;
           note.textContent = "ゴール！";
@@ -964,7 +964,7 @@ const GAMES = [
           tile.classList.add("is-wrong");
           first.classList.add("is-wrong");
           for (const c of grid.children) if (c.dataset.key === tiles[0].shape + tiles[0].color) c.classList.add("is-right");
-          g.lose();
+          g.lose("ちがうマーク！");
         }
       });
     },
@@ -1031,7 +1031,7 @@ const GAMES = [
         const r = Math.min(m.left + m.width, top.left + top.width);
         if (r - l <= 0.02) {
           m.el.classList.add("is-fall");
-          g.lose();
+          g.lose("ずれすぎた！");
           return;
         }
         m.el.style.left = `${l * 100}%`;
@@ -1101,7 +1101,7 @@ const GAMES = [
         if (item.bomb) {
           node.classList.add("is-boom");
           counter.textContent = "ドカーン！";
-          g.lose();
+          g.lose("ばくだんだ！");
           return;
         }
         node.classList.add("is-popped");

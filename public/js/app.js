@@ -8,7 +8,7 @@
   const GO_MS = 350; // 「GO!」を見せる時間
   const AUTO_NEXT_MS = 1500; // 結果のあと自動で次へ進むまで（0で自動送りなし）
   const LEVEL_EVERY = 4; // 何COMBOごとに難しくなるか
-  const SHOW_HOWTO = false; // 初めて出るゲームに、操作の見本を見せるか
+  const SHOW_HOWTO = true; // 初めて出るゲームに、操作の見本を見せるか
   const CM_EVERY = 8; // 何ゲームごとにCM画面を挟むか（将来の広告枠）
   const BEST_KEY = "gobyo-best";
   const HASHTAG = "ゴビョー";

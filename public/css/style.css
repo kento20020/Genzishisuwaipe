@@ -419,8 +419,10 @@ ol { padding: 0; list-style: none; }
 }
 .btn-act {
   flex: 1 1 0;
+  min-width: 0;
   min-height: 56px;
-  font-size: clamp(1.05rem, 5vw, 1.3rem);
+  padding-inline: 0.5em;
+  font-size: clamp(0.95rem, 4.6vw, 1.3rem);
   white-space: nowrap;
 }
 .btn-act.btn-next { background: var(--pink); color: var(--paper); }
@@ -613,7 +615,6 @@ ol { padding: 0; list-style: none; }
 @keyframes hd-circle { from { transform: rotate(0deg) translateX(50px) rotate(0deg); } to { transform: rotate(360deg) translateX(50px) rotate(-360deg); } }
 
 /* 失敗の画面：はげましの文字を読みやすく */
-.overlay.is-miss { background: color-mix(in srgb, var(--ink) 72%, transparent); }
 .overlay.is-miss .ov-hint { color: var(--paper); }
 
 /* パソコン向けの案内・つづきを遊ぶボタン */
@@ -643,7 +644,7 @@ ol { padding: 0; list-style: none; }
   animation: spin 8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-.overlay.is-miss { background: color-mix(in srgb, var(--ink) 55%, transparent); }
+.overlay.is-miss { background: color-mix(in srgb, var(--ink) 88%, transparent); }
 .overlay.is-miss .ov-main { color: var(--sky); text-shadow: 5px 5px 0 var(--ink); }
 
 .next-hint { font-size: 0.9rem; animation: float 1.2s ease-in-out infinite; }
@@ -1223,6 +1224,7 @@ ol { padding: 0; list-style: none; }
 .slot-cm.has-ad .card { padding-inline: 8px; gap: 10px; }
 @media (max-height: 760px) {
   .slot-cm.has-ad .cm-title, .slot-cm.has-ad .cm-lead { display: none; }
+  .slot-cm.has-ad .cm-label, .slot-cm.has-ad .cm-best { display: none; }
 }
 .cm-link, .title-link { font-size: 0.8rem; color: var(--ink); text-underline-offset: 3px; }
 .cm-links, .title-links { margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; }
