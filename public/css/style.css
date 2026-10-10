@@ -385,6 +385,18 @@ ol { padding: 0; list-style: none; }
   font: 1.15rem var(--font-dot);
 }
 .ov-sub:empty { display: none; }
+/* READY?の間は、お題を大きく真ん中に出す */
+.overlay.is-ready { background: color-mix(in srgb, var(--cream) 88%, transparent); gap: 14px; }
+.overlay.is-ready .ov-sub {
+  max-width: 90%;
+  padding: 10px 16px;
+  border-radius: 18px;
+  background: var(--yellow);
+  box-shadow: 4px 4px 0 var(--ink);
+  font: clamp(1.25rem, 6.4vw, 1.7rem)/1.4 var(--font-pop);
+  text-wrap: balance;
+  word-break: auto-phrase;
+}
 .overlay.is-go .ov-main { color: var(--mint); text-shadow: 5px 5px 0 var(--ink); }
 .overlay.is-clear { background: var(--yellow); }
 .overlay.is-clear::before {

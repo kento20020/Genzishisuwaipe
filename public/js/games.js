@@ -263,7 +263,7 @@ const GAMES = [
       g.stage.append(btn, tease);
       const lines = ["がまん、がまん…", "ちょっとだけなら…？", "今だけ押していいよ！", "…ほんとだよ？"];
       lines.forEach((text, i) => {
-        g.after(1000 + i * 950, () => {
+        g.after((1 + (i * 0.95 * g.duration) / 5) * 1000, () => {
           tease.textContent = text;
           if (i === 2) btn.textContent = "押して！";
         });
