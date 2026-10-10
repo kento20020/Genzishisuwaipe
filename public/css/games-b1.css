@@ -1,0 +1,567 @@
+/* ミニゲーム追加分（バッチ1）の見た目。games-b1.js 用 */
+
+/* ---------- どのカップ？ ---------- */
+.g-shell-cup {
+  position: absolute;
+  top: 56%;
+  width: 76px;
+  height: 84px;
+  translate: -50% -50%;
+  cursor: pointer;
+  filter: drop-shadow(4px 5px 0 var(--ink));
+  transition: left var(--d, 0.3s) ease-in-out, margin-top var(--d, 0.3s) ease-in-out, transform 0.22s ease-out;
+}
+.g-shell-cup::before,
+.g-shell-cup::after {
+  content: "";
+  position: absolute;
+  clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%);
+}
+.g-shell-cup::before { inset: 0; background: var(--ink); }
+.g-shell-cup::after {
+  inset: 3px;
+  background:
+    linear-gradient(transparent 62%, color-mix(in srgb, var(--ink) 18%, transparent) 62% 70%, transparent 70%),
+    linear-gradient(90deg, transparent 22%, color-mix(in srgb, var(--paper) 55%, transparent) 22% 32%, transparent 32%),
+    var(--orange);
+}
+.g-shell-field.is-four .g-shell-cup { width: 64px; height: 76px; }
+.g-shell-cup.is-up { transform: translateY(-40px); }
+.g-shell-cup.is-lift { margin-top: -18px; z-index: 2; }
+.g-shell-cup.is-wrong::after { background: var(--red); }
+.g-shell-ball {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  width: 30px;
+  height: 30px;
+  translate: -50% 0;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--paper) 55%, var(--red)), var(--red) 62%);
+  visibility: hidden;
+}
+.g-shell-cup.is-up .g-shell-ball { visibility: visible; }
+
+/* ---------- ダッシュ ---------- */
+.g-run-track {
+  position: relative;
+  width: 100%;
+  height: 36px;
+  border: var(--line) solid var(--ink);
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 22px, color-mix(in srgb, var(--ink) 18%, transparent) 22px 24px),
+    var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.g-run-flag {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  translate: 0 -50%;
+  font: 0.8rem var(--font-dot);
+  color: var(--red);
+}
+.g-run-runner {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  translate: -3px calc(-50% - 1px);
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 2px 2px 0 var(--ink);
+  font: 1rem var(--font-dot);
+  transition: left 0.08s linear;
+}
+.g-run-pads {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+.g-run-pad {
+  display: grid;
+  place-items: center;
+  width: 46%;
+  height: 150px;
+  border: var(--line) solid var(--ink);
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: 0 8px 0 var(--ink);
+  font: 1.5rem var(--font-pop);
+  pointer-events: none;
+}
+.g-run-pad[data-side="left"] { --pc: var(--sky); }
+.g-run-pad[data-side="right"] { --pc: var(--pink); }
+.g-run-pad.is-next { background: color-mix(in srgb, var(--pc) 70%, var(--paper)); animation: b1-blink 0.5s steps(2) infinite; }
+.g-run-pad.is-hit { animation: b1-dent 0.12s; }
+.g-run-pad.is-shake { animation: shake 0.2s; }
+@keyframes b1-blink { 50% { background: var(--paper); } }
+@keyframes b1-dent { 50% { transform: translateY(8px); box-shadow: 0 0 0 var(--ink); } }
+
+/* ---------- だるまさん ---------- */
+.g-daruma-bubble {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  translate: -50% 0;
+  min-width: 70%;
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 2.5px solid var(--ink);
+  border-radius: 16px;
+  background: var(--paper);
+  font: 1.05rem/1.4 var(--font-dot);
+  text-align: center;
+  white-space: nowrap;
+}
+.g-daruma-bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 12px;
+  height: 12px;
+  margin: -7px 0 0 -6px;
+  border: 2.5px solid var(--ink);
+  border-width: 0 2.5px 2.5px 0;
+  background: var(--paper);
+  transform: rotate(45deg);
+}
+.g-daruma-oni {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  width: 90px;
+  height: 90px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.g-daruma-oni::before,
+.g-daruma-oni::after {
+  content: "";
+  position: absolute;
+  top: -15px;
+  width: 20px;
+  height: 22px;
+  background: var(--yellow);
+  border: 2.5px solid var(--ink);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.g-daruma-oni::before { left: 10px; transform: rotate(-12deg); }
+.g-daruma-oni::after { right: 10px; transform: rotate(12deg); }
+.g-daruma-oni.is-back {
+  background:
+    radial-gradient(circle at 50% 50%, transparent 0 8px, color-mix(in srgb, var(--paper) 30%, transparent) 8px 10px, transparent 10px),
+    var(--ink);
+}
+.g-daruma-oni.is-look { background: var(--orange); animation: b1-glare 0.2s steps(2) infinite; }
+.g-daruma-oni.is-caught { background: var(--red); animation: shake 0.3s; }
+@keyframes b1-glare { 50% { transform: translateY(-2px); } }
+.g-daruma-eye,
+.g-daruma-mouth { display: none; position: absolute; }
+.is-look .g-daruma-eye,
+.is-look .g-daruma-mouth,
+.is-caught .g-daruma-eye,
+.is-caught .g-daruma-mouth { display: block; }
+.g-daruma-eye {
+  top: 28px;
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--ink) 0 4px, var(--paper) 5px);
+}
+.g-daruma-eye:nth-child(1) { left: 14px; }
+.g-daruma-eye:nth-child(2) { right: 14px; }
+.g-daruma-mouth {
+  left: 50%;
+  bottom: 14px;
+  width: 38px;
+  height: 7px;
+  translate: -50% 0;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+  background: var(--red);
+}
+.g-daruma-line {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 36%;
+  border-top: 4px dashed var(--ink);
+}
+.g-daruma-goal {
+  position: absolute;
+  right: 0;
+  bottom: 4px;
+  font: 0.85rem var(--font-dot);
+}
+.g-daruma-me {
+  position: absolute;
+  left: 50%;
+  top: 84%;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--pink);
+  box-shadow: 3px 3px 0 var(--ink);
+  font: 0.78rem var(--font-pop);
+}
+.g-daruma-me.is-go { background: var(--lime); }
+.g-daruma-note { position: absolute; left: 0; right: 0; bottom: 8px; }
+
+/* ---------- いろ？もじ？ ---------- */
+.g-stroop-word {
+  font-family: var(--font-pop);
+  font-weight: 400;
+  -webkit-text-stroke: 2px var(--ink);
+  paint-order: stroke fill;
+  letter-spacing: 0.05em;
+}
+.g-stroop-row .g-choice { font-family: var(--font-pop); font-size: 1.15rem; }
+.g-choice.is-colored {
+  -webkit-text-stroke: 1.5px var(--ink);
+  paint-order: stroke fill;
+}
+
+/* ---------- てんびん ---------- */
+.g-scale-beam {
+  position: absolute;
+  top: 33%;
+  left: 50%;
+  width: 188px;
+  height: 10px;
+  translate: -50% -50%;
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  background: var(--ink);
+  transform: rotate(var(--a, 0deg));
+  transition: transform 0.3s ease-out;
+}
+.g-scale-pan {
+  position: absolute;
+  top: 4px;
+  width: 130px;
+  height: 150px;
+  translate: -50% 0;
+  transform: rotate(calc(var(--a, 0deg) * -1));
+  transform-origin: 50% 0;
+  transition: transform 0.3s ease-out;
+}
+.g-scale-pan[data-side="left"] { left: 0; --pc: var(--pink); }
+.g-scale-pan[data-side="right"] { left: 100%; --pc: var(--sky); }
+.g-scale-pan::before {
+  content: "";
+  display: block;
+  height: 24px;
+  margin: 0 12%;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1.5px), var(--ink) calc(50% - 1.5px) calc(50% + 1.5px), transparent calc(50% + 1.5px)) left / 50% 100% no-repeat,
+    linear-gradient(to top left, transparent calc(50% - 1.5px), var(--ink) calc(50% - 1.5px) calc(50% + 1.5px), transparent calc(50% + 1.5px)) right / 50% 100% no-repeat;
+}
+.g-scale-dish {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 3px;
+  height: 126px;
+  padding-bottom: 8px;
+  border: var(--line) solid var(--ink);
+  border-radius: 8px 8px 60px 60px;
+  background: color-mix(in srgb, var(--pc) 40%, var(--paper));
+  box-shadow: 3px 4px 0 var(--ink);
+}
+.g-scale-weight {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 34px;
+  border: 2.5px solid var(--ink);
+  border-radius: 10px;
+  background: var(--yellow);
+  font: 1.35rem/1 var(--font-dot);
+}
+.g-scale-weight.w-1 { background: var(--mint); }
+.g-scale-weight.w-2 { background: var(--orange); }
+.g-scale-weight.w-3 { background: var(--lilac); }
+.g-scale-weight.w-4 { background: var(--lime); }
+.g-scale-post {
+  position: absolute;
+  top: 33%;
+  left: 50%;
+  width: 50px;
+  height: 118px;
+  translate: -50% 0;
+  background: var(--ink);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.g-scale-base {
+  position: absolute;
+  top: calc(33% + 114px);
+  left: 50%;
+  width: 96px;
+  height: 12px;
+  translate: -50% 0;
+  border-radius: 6px;
+  background: var(--ink);
+}
+
+/* ---------- ひかったマス ---------- */
+.g-flash-tile { background: var(--paper); }
+.g-flash-tile.is-lit { background: var(--yellow); box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px var(--ink); }
+.g-flash-tile.is-right { background: var(--mint); }
+.g-flash-tile.is-wrong { background: var(--red); }
+.g-flash-tile.is-reveal { background: var(--yellow); animation: b1-blink-tile 0.4s steps(2) 3; }
+@keyframes b1-blink-tile { 50% { background: var(--paper); } }
+
+/* ---------- あみだくじ ---------- */
+.g-amida {
+  position: relative;
+  flex: none;
+  width: 100%;
+  max-width: 320px;
+  height: 342px;
+}
+.g-amida-svg {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  width: 100%;
+  height: 280px;
+  overflow: visible;
+}
+.g-amida-v { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.g-amida-h { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.g-amida-path { stroke: var(--pink); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; }
+.g-amida-start {
+  position: absolute;
+  top: 0;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  translate: -50% 0;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 4px 0 var(--ink);
+  font: 1.4rem var(--font-dot);
+  cursor: pointer;
+}
+.g-amida-start.is-picked { background: var(--pink); transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.g-amida-goal {
+  position: absolute;
+  bottom: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  translate: -50% 0;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--cream);
+  font: 1.4rem/1 var(--font-dot);
+}
+.g-amida-goal.is-star { background: var(--yellow); }
+.g-amida-goal.is-right { background: var(--mint); box-shadow: 0 0 0 4px var(--paper), 0 0 0 7px var(--ink); }
+.g-amida-goal.is-wrong { background: var(--red); animation: shake 0.3s; }
+
+/* ---------- ぐるぐる ---------- */
+.g-crank-dial {
+  position: relative;
+  flex: none;
+  width: min(240px, 60cqh);
+  aspect-ratio: 1;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(color-mix(in srgb, var(--ink) 12%, transparent) 0 8deg, transparent 8deg 30deg),
+    var(--paper);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+.g-crank-count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 1.4rem var(--font-pop);
+  pointer-events: none;
+}
+.g-crank-mark {
+  position: absolute;
+  font: 2rem/1 var(--font-dot);
+  color: var(--ink);
+  opacity: 0.3;
+  translate: -50% -50%;
+  pointer-events: none;
+}
+.g-crank-mark.m0 { left: 24%; top: 24%; }
+.g-crank-mark.m1 { left: 76%; top: 24%; }
+.g-crank-mark.m2 { left: 76%; top: 76%; }
+.g-crank-mark.m3 { left: 24%; top: 76%; }
+.g-crank-handle {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  translate: -50% -50%;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, color-mix(in srgb, var(--paper) 55%, var(--pink)), var(--pink) 62%);
+  box-shadow: 3px 3px 0 var(--ink);
+  pointer-events: none;
+}
+
+/* ---------- 船長の命令 ---------- */
+.g-captain {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 84px;
+  height: 90px;
+  translate: -50% 0;
+}
+.g-captain-hat {
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 32px;
+  border: var(--line) solid var(--ink);
+  border-radius: 40px 40px 6px 6px;
+  background:
+    linear-gradient(transparent 62%, var(--yellow) 62% 100%),
+    var(--sky);
+  z-index: 1;
+}
+.g-captain-face {
+  position: absolute;
+  bottom: 0;
+  left: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  height: 66px;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--ink);
+  font-size: 1.9rem;
+  padding-top: 8px;
+}
+.g-captain-order {
+  position: absolute;
+  top: 130px;
+  left: 50%;
+  width: 92%;
+  min-height: 92px;
+  display: grid;
+  place-items: center;
+  translate: -50% 0;
+  padding: 10px 12px;
+  border: var(--line) solid var(--ink);
+  border-radius: 22px;
+  background: var(--paper);
+  box-shadow: 5px 5px 0 var(--ink);
+  font: 1.55rem/1.3 var(--font-pop);
+  text-align: center;
+}
+.g-captain-order::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -11px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  border: var(--line) solid var(--ink);
+  border-width: var(--line) 0 0 var(--line);
+  background: var(--paper);
+  transform: rotate(45deg);
+}
+.g-captain-order.pop { animation: pop 0.2s ease-out; }
+.g-captain-order.is-done { background: var(--mint); }
+.g-captain-order.is-wrong { background: var(--red); color: var(--paper); }
+.g-captain-order.is-wrong::before { background: var(--red); }
+.g-captain-hints {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.g-captain-hint {
+  padding: 1px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  font-size: 0.85rem;
+}
+
+/* ---------- おかいもの ---------- */
+.g-coin-price {
+  padding: 8px 22px;
+  border: var(--line) solid var(--ink);
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: 5px 5px 0 var(--pink);
+  font: clamp(3rem, 16vw, 4.2rem)/1.1 var(--font-dot);
+  font-variant-numeric: tabular-nums;
+}
+.g-coin-now {
+  padding: 2px 16px;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--paper);
+  font: 1.3rem var(--font-dot);
+}
+.g-coin-now.is-ok { background: var(--mint); }
+.g-coin-now.is-over { background: var(--red); color: var(--paper); }
+.g-coin-row {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.g-coin-btn {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  flex: none;
+  border: var(--line) solid var(--ink);
+  border-radius: 50%;
+  box-shadow: 0 5px 0 var(--ink), inset 0 0 0 4px color-mix(in srgb, var(--paper) 45%, transparent);
+  font: 1.55rem var(--font-dot);
+  cursor: pointer;
+}
+.g-coin-btn.coin-yellow { background: var(--yellow); }
+.g-coin-btn.coin-orange { background: var(--orange); }
+.g-coin-btn.coin-lime { background: var(--lime); }
+.g-coin-btn.coin-paper { background: var(--paper); }
+.g-coin-btn.is-hit { animation: b1-coin 0.14s; }
+@keyframes b1-coin { 50% { transform: translateY(5px); box-shadow: 0 0 0 var(--ink); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .g-run-pad.is-next, .g-daruma-oni.is-look { animation: none; }
+}
