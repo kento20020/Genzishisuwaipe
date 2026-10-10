@@ -23,6 +23,23 @@
     const s = stage.getBoundingClientRect();
     return { x: f.left - s.left, y: f.top - s.top };
   };
+  // 3択の判定（まちがえたら理由つきで負ける）。reason は文字列か、(押した選択肢の値) => 文字列
+  const onChoose = (g, row, answer, reason, canAnswer = () => true) => {
+    g.onTap(({ target }) => {
+      const b = target && target.closest && target.closest(".g-choice");
+      if (!b || !row.contains(b) || !canAnswer()) return;
+      const ok = b.dataset.v === String(answer);
+      b.classList.add(ok ? "is-right" : "is-wrong");
+      if (ok) {
+        g.win();
+      } else {
+        const right = [...row.children].find((c) => c.dataset.v === String(answer));
+        if (right) right.classList.add("is-right");
+        g.lose(typeof reason === "function" ? reason(b.dataset.v) : reason);
+      }
+    });
+  };
+  const SHAPE_JA = { circle: "まる", square: "しかく", tri: "さんかく", star: "ほし", diamond: "ひしがた", down: "さかさ三角" };
   const COLORS = ["pink", "sky", "mint", "yellow", "orange", "lilac", "lime"];
 
   // ---------- すべれ！ の盤面づくり ----------
@@ -199,6 +216,7 @@
         let jumping = false;
         let jt = 0;
         let height = 0;
+        let sinceLand = Infinity; // 着地してからの秒数
 
         const draw = () => {
           const cy = H * (0.45 + 0.45 * Math.cos(phase));
@@ -222,12 +240,14 @@
         });
         g.frame((rawDt) => {
           const dt = Math.min(rawDt, 0.05);
+          sinceLand += dt;
           if (jumping) {
             jt += dt;
             if (jt >= jumpFor()) {
               jumping = false;
               jt = 0;
               height = 0;
+              sinceLand = 0;
             } else {
               const u = jt / jumpFor();
               height = 4 * HEIGHT * u * (1 - u);
@@ -244,7 +264,8 @@
               man.classList.add("is-trip");
               phase = TAU * Math.floor(phase / TAU);
               draw();
-              g.lose();
+              if (jumping) g.lose(jt < jumpFor() / 2 ? "おそかった！" : "はやすぎた！");
+              else g.lose(sinceLand < 0.3 ? "はやすぎた！" : "つまずいた！");
               return;
             }
           }
@@ -320,7 +341,7 @@
               g.win();
             } else if (hands <= 0) {
               ball.classList.add("is-out");
-              g.lose();
+              g.lose("手数ぎれ！");
             }
           });
         });
@@ -429,7 +450,7 @@
           } else {
             best.classList.add("is-wrong");
             for (const s of slots) if (s.dataset.shape === answerShape) s.classList.add("is-answer");
-            g.lose();
+            g.lose("ちがう形だった！");
           }
         });
         if (sway) {
@@ -565,7 +586,7 @@
             over = true;
             dot.classList.add("is-wrong");
             dots.forEach((d) => d.el.dataset.t === "1" && d.el.classList.add("is-mark"));
-            g.lose();
+            g.lose("ちがう玉だった！");
           }
         });
       },
@@ -627,7 +648,7 @@
           }
         }
         g.stage.append(seqEl, row);
-        gOnChoice(g, row, String(answer));
+        onChoose(g, row, String(answer), `正解は${isShape ? SHAPE_JA[answer] : answer}！`);
       },
     },
 
@@ -704,7 +725,7 @@
             over = true;
             show();
             ball.classList.add("is-fall");
-            g.lose();
+            g.lose("落ちた！");
             return;
           }
           show();
@@ -776,7 +797,7 @@
           row.hidden = false;
           ready = true;
         });
-        gOnChoice(g, row, answer, () => ready);
+        onChoose(g, row, answer, `正解は${answer}人！`, () => ready);
       },
     },
 
@@ -875,7 +896,7 @@
             q.textContent = answer === "cw" ? "↻" : "↺";
             const ok = chosen === answer;
             (dir === "left" ? l : r).classList.add(ok ? "is-right" : "is-wrong");
-            g.after(450, () => (ok ? g.win() : g.lose()));
+            g.after(450, () => (ok ? g.win() : g.lose("逆回りだった！")));
           },
           { tapSides: true }
         );
@@ -906,7 +927,7 @@
           c.append(miniGrid(g, c.dataset.v, m.n, "g-mirror-mini"));
         }
         g.stage.append(view, row);
-        gOnChoice(g, row, m.answer);
+        onChoose(g, row, m.answer, m.axis === "v" ? "左右が逆だった！" : "上下が逆だった！");
       },
     },
 
@@ -977,7 +998,7 @@
           if (Math.abs(y - zc) > zh / 2) {
             zone.classList.add("is-out");
             show();
-            g.lose();
+            g.lose(y < zc ? "枠の上に出た！" : "枠の下に出た！");
             return;
           }
           show();
