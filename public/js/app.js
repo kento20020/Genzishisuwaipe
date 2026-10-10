@@ -8,6 +8,7 @@
   const GO_MS = 350; // 「GO!」を見せる時間
   const AUTO_NEXT_MS = 1500; // 結果のあと自動で次へ進むまで（0で自動送りなし）
   const LEVEL_EVERY = 4; // 何COMBOごとに難しくなるか
+  const SHOW_HOWTO = false; // 初めて出るゲームに、操作の見本を見せるか
   const CM_EVERY = 8; // 何ゲームごとにCM画面を挟むか（将来の広告枠）
   const BEST_KEY = "gobyo-best";
   const HASHTAG = "ゴビョー";
@@ -82,6 +83,43 @@
     return cue;
   }
 
+  // ---------- 初めてのゲームの操作見本 ----------
+  const HOWTO_KEY = "gobyo-howto";
+  function seenHowto() {
+    try {
+      return JSON.parse(localStorage.getItem(HOWTO_KEY) || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+  function markHowto(id) {
+    const list = seenHowto();
+    if (list.includes(id)) return;
+    list.push(id);
+    try {
+      localStorage.setItem(HOWTO_KEY, JSON.stringify(list));
+    } catch (_) {
+      // 保存できなくても、そのときだけ見られなくなるだけ
+    }
+  }
+  const needsHowto = (game) =>
+    SHOW_HOWTO && typeof HOWTO === "object" && HOWTO[game.id] && !seenHowto().includes(game.id);
+
+  // 指のマークが、その操作をやってみせる
+  function makeDemo(kind) {
+    const demo = el("div", `howto-demo is-${kind}`);
+    demo.setAttribute("aria-hidden", "true");
+    if (kind === "drag") demo.append(el("span", "hd-slot"), el("span", "hd-piece"));
+    if (kind === "pull") demo.append(el("span", "hd-ball"), el("span", "hd-band"));
+    if (kind === "choose") for (let i = 0; i < 3; i++) demo.append(el("span", "hd-choice"));
+    if (kind === "flick") for (const d of ["up", "right", "down", "left"]) demo.append(el("span", `hd-arrow hd-${d}`));
+    if (kind === "swipe") demo.append(el("span", "hd-arrow hd-left"), el("span", "hd-arrow hd-right"));
+    if (kind === "nothing") demo.append(el("span", "hd-stop", "✋"));
+    if (["swipe", "drag", "rub", "pull", "flick", "circle"].includes(kind)) demo.append(el("span", "hd-trail"));
+    if (kind !== "nothing") demo.append(el("span", "hd-finger"));
+    return demo;
+  }
+
   function restartAnimation(node, className) {
     node.classList.remove(className);
     void node.offsetWidth;
@@ -153,19 +191,28 @@
     const overlay = el("div", "overlay is-ready");
     const ovMain = el("p", "ov-main", "READY?");
     const ovSub = el("p", "ov-sub");
-    // クリア・失敗のあとに、「上にスワイプ」を大きく出す
-    const ovNext = el("p", "ov-next");
+    const ovHint = el("p", "ov-hint"); // 失敗の理由の下の、はげまし
+    // クリア・失敗のあと：「上にスワイプ」の見本と、同じ大きさの2つのボタン
+    const ovNext = el("div", "ov-next");
     ovNext.hidden = true;
-    ovNext.append(makeSwipeCue(), el("span", "ov-next-text", "上にスワイプで次へ"));
-    overlay.append(ovMain, ovSub, ovNext);
+    const actions = el("div", "ov-actions");
+    const retry = el("button", "btn btn-act btn-retry", "もう一回");
+    retry.type = "button";
+    const next = el("button", "btn btn-act btn-next", "次のゲーム ↑");
+    next.type = "button";
+    actions.append(retry, next);
+    ovNext.append(makeSwipeCue(), actions);
+    // 初めてのゲームの操作見本（指の動き）と「やってみる」ボタン
+    const howto = el("div", "ov-howto");
+    howto.hidden = true;
+    const howtoDemo = el("div", "ov-howto-demo");
+    const go = el("button", "btn btn-act btn-go", "やってみる");
+    go.type = "button";
+    howto.append(howtoDemo, go);
+    overlay.append(ovMain, ovSub, ovHint, howto, ovNext);
     screen.append(stage, overlay);
 
-    const foot = el("div", "card-foot");
-    const retry = el("button", "btn btn-small btn-retry", "もう一回");
-    retry.type = "button";
-    foot.append(retry);
-
-    card.append(head, inst, fuse, screen, foot);
+    card.append(head, inst, fuse, screen);
     section.append(card);
 
     const ctl = {
@@ -178,7 +225,10 @@
       overlay,
       ovMain,
       ovSub,
+      ovHint,
       ovNext,
+      howto,
+      howtoDemo,
       status: "idle",
       run: 0,
       timers: [],
@@ -188,14 +238,23 @@
         if (ctl.status === "idle") ready(ctl);
       },
       deactivate() {
-        if (ctl.status === "ready") toIdle(ctl);
+        if (ctl.status === "ready" || ctl.status === "howto") toIdle(ctl);
         // 終わった画面の中のゲームの部品は、離れたら片付ける（動き続ける部品が残らないように）
         if (ctl.status === "done") ctl.stage.replaceChildren();
       },
     };
     retry.addEventListener("click", () => {
-      if (ctl.status === "done" && state.active === ctl) ready(ctl);
+      if (ctl.status === "done" && ctl.missed && state.active === ctl) ready(ctl);
     });
+    next.addEventListener("click", () => {
+      if (ctl.status === "done" && state.active === ctl) goNext();
+    });
+    go.addEventListener("click", () => {
+      if (ctl.status !== "howto" || state.active !== ctl) return;
+      markHowto(ctl.game.id);
+      startReady(ctl);
+    });
+    ctl.retryBtn = retry;
     register(section, ctl);
     return section;
   }
@@ -217,11 +276,14 @@
     ctl.keyHandler = null;
   }
 
-  function showOverlay(ctl, mode, main, sub) {
+  function showOverlay(ctl, mode, main, sub, hint) {
     ctl.overlay.className = `overlay is-${mode}`;
     ctl.ovMain.textContent = main;
     ctl.ovSub.textContent = sub || "";
+    ctl.ovHint.textContent = hint || "";
+    ctl.retryBtn.hidden = mode !== "miss"; // 「もう一回」は失敗のときだけ（クリアをやり直してCOMBOを稼げないように）
     ctl.ovNext.hidden = mode !== "clear" && mode !== "miss";
+    if (mode !== "howto") ctl.howto.hidden = true;
     ctl.overlay.hidden = false;
     restartAnimation(ctl.ovMain, "pop");
   }
@@ -249,6 +311,7 @@
     stopAll(ctl);
     ctl.run++;
     ctl.status = "idle";
+    ctl.howto.hidden = true;
     resetFuse(ctl);
     showOverlay(ctl, "ready", "READY?");
   }
@@ -261,9 +324,31 @@
     ctl.stage.replaceChildren();
     ctl.inst.textContent = ctl.game.instruction(levelNow(), ctl.config);
     resetFuse(ctl);
+    if (needsHowto(ctl.game)) {
+      showHowto(ctl);
+      return;
+    }
+    startReady(ctl);
+  }
+
+  function startReady(ctl) {
+    ctl.status = "ready";
+    ctl.howto.hidden = true;
     showOverlay(ctl, "ready", "READY?", ctl.inst.textContent); // お題を大きく見せる
     later(ctl, READY_MS, () => showOverlay(ctl, "go", "GO!"));
     later(ctl, READY_MS + GO_MS, () => play(ctl));
+  }
+
+  // 初めて出るゲーム：ルールを読む時間と、腕前を試す時間を分ける
+  function showHowto(ctl) {
+    ctl.status = "howto";
+    const kind = HOWTO[ctl.game.id];
+    showOverlay(ctl, "howto", "はじめてのゲーム", ctl.inst.textContent, HOWTO_LABEL[kind] || "");
+    const demo = makeDemo(kind);
+    ctl.howtoDemo.replaceChildren(demo);
+    ctl.howto.hidden = false;
+    // 空いている高さに合わせて、見本の大きさを決める（ボタンが画面の外に出ないように）
+    demo.style.setProperty("--fit", String(Math.max(0.45, Math.min(1, ctl.howtoDemo.clientHeight / 160))));
   }
 
   function play(ctl) {
@@ -285,16 +370,18 @@
     } catch (err) {
       console.error(err);
     }
-    later(ctl, limit, () => g.end(ctl.game.timeout === "win"));
+    later(ctl, limit, () => g.end(ctl.game.timeout === "win", "時間切れ！"));
   }
 
-  function finish(ctl, won) {
+  function finish(ctl, won, reason) {
     stopAll(ctl);
     ctl.status = "done";
+    ctl.missed = !won;
     freezeFuse(ctl);
     ctl.section.classList.remove("is-playing");
     ctl.section.classList.add("is-done", won ? "is-clear" : "is-miss");
     let sub;
+    let hint = "";
     if (won) {
       state.combo++;
       const newBest = state.combo > state.best;
@@ -305,10 +392,12 @@
       sub = `${state.combo} COMBO${newBest && state.combo > 1 ? "　NEW BEST!" : ""}`;
     } else {
       state.combo = 0;
-      sub = pick(MISS_LINES);
+      // 失敗の理由を主役にして、はげましはその下に小さく
+      sub = reason || pick(MISS_LINES);
+      hint = reason ? pick(MISS_LINES) : "";
     }
     updateHud(won);
-    showOverlay(ctl, won ? "clear" : "miss", won ? "CLEAR!" : "MISS…", sub);
+    showOverlay(ctl, won ? "clear" : "miss", won ? "CLEAR!" : "MISS…", sub, hint);
     setLocked(false);
 
     if (AUTO_NEXT_MS > 0) {
@@ -419,9 +508,9 @@
       config: ctl.config,
       el,
       win: () => api.end(true),
-      lose: () => api.end(false),
-      end: (won) => {
-        if (alive()) finish(ctl, won);
+      lose: (reason) => api.end(false, reason), // reason：失敗の理由（短く。例「もう少し強く！」「正解は3:00」）
+      end: (won, reason) => {
+        if (alive()) finish(ctl, won, reason);
       },
       after: (ms, fn) => later(ctl, ms, () => alive() && fn()),
       frame: (fn) => {
@@ -565,7 +654,12 @@
       section.classList.add("has-ad");
     }
 
-    card.append(el("p", "cm-label", "CM"), adBox || bars, title, best, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
+    // 共有のまえに、まず「つづきを遊ぶ」（上にスワイプでも進める）
+    const go = el("button", "btn btn-go", "つづきを遊ぶ ↑");
+    go.type = "button";
+    go.addEventListener("click", goNext);
+
+    card.append(el("p", "cm-label", "CM"), adBox || bars, title, best, go, el("p", "cm-lead", "友達に挑戦状をおくろう"), share.el);
     if (buy) card.append(buy);
     card.append(links);
     section.append(card);
@@ -731,6 +825,8 @@
     deactivate() {},
   });
   document.getElementById("titleCue").append(makeSwipeCue());
+  // マウスのある端末（パソコン）には、その操作を案内する
+  if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) document.getElementById("titlePc").hidden = false;
   document.getElementById("btnStart").addEventListener("click", goNext);
   checkEntitlement();
   titleBest.textContent = String(state.best);

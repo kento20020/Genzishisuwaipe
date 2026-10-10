@@ -22,6 +22,13 @@
     return { x: r.left - s.left, y: r.top - s.top, w: r.width, h: r.height };
   };
 
+  // gOnChoice（games.js）は g.lose() を理由なしで呼ぶので、理由つきの g もどきを渡す
+  const withReason = (g, reason) => ({
+    onTap: (f) => g.onTap(f),
+    win: () => g.win(),
+    lose: () => g.lose(reason),
+  });
+
   GAMES.push(
     // ------------------------------------------------------------------ 1
     {
@@ -103,7 +110,7 @@
 
         const row = gChoiceRow(g, answer, wrongs);
         g.stage.append(wrap, row);
-        gOnChoice(g, row, answer);
+        gOnChoice(withReason(g, `正解は${answer}！`), row, answer);
       },
     },
 
@@ -207,7 +214,7 @@
           g.after(460, () => {
             hoop.classList.add(ok ? "is-hit" : "is-miss");
             if (ok) g.win();
-            else g.lose();
+            else g.lose(apex < hy ? "強すぎた！" : "もう少し強く！");
           });
         });
 
@@ -269,7 +276,7 @@
           (d) => {
             if (d !== dir) {
               midEl.classList.add("is-wrong");
-              g.lose();
+              g.lose(`まん中は${dir === "left" ? "左" : "右"}むき！`);
               return;
             }
             left--;
@@ -356,7 +363,8 @@
           }
           c.classList.remove("is-picked");
           first.classList.remove("is-picked");
-          if (Number(c.dataset.n) + Number(first.dataset.n) === T) {
+          const sum = Number(c.dataset.n) + Number(first.dataset.n);
+          if (sum === T) {
             c.classList.add("is-right");
             first.classList.add("is-right");
             g.win();
@@ -364,7 +372,7 @@
             c.classList.add("is-wrong");
             first.classList.add("is-wrong");
             answerPair.forEach((i) => cards[i].classList.add("is-answer"));
-            g.lose();
+            g.lose(`合計は${sum}だった！`);
           }
         });
       },
@@ -427,7 +435,7 @@
           finger = null;
           if (startAt !== null) {
             ring.classList.add("is-out");
-            g.lose();
+            g.lose("指がはなれた！");
           }
         });
         g.frame((dt, elapsed) => {
@@ -441,7 +449,7 @@
           prog.style.setProperty("--deg", `${p * 360}deg`);
           if (!finger || Math.hypot(finger.x - cx, finger.y - cy) > R + 6) {
             ring.classList.add("is-out");
-            g.lose();
+            g.lose("はみ出した！");
             return;
           }
           if (t >= hold) {
@@ -507,10 +515,10 @@
           d.firstChild.textContent = (r.err >= 0 ? "+" : "") + (r.err / 1000).toFixed(2);
         };
         const reveal = () => results.forEach((_, k) => show(k));
-        const end = (won) => {
+        const end = (won, reason) => {
           reveal();
           if (won) g.win();
-          else g.lose();
+          else g.lose(reason);
         };
         const record = (ok, err) => {
           results.push({ ok, err });
@@ -523,7 +531,7 @@
           const k = results.length;
           if (now < t0 + 4 * I - tol) {
             label.textContent = "フライング！";
-            end(false);
+            end(false, "早すぎた！");
             return;
           }
           const err = now - (t0 + (4 + k) * I);
@@ -531,7 +539,7 @@
           record(ok, err);
           if (!ok) {
             label.textContent = err < 0 ? "はやい！" : "おそい！";
-            end(false);
+            end(false, err < 0 ? "ちょっと早い！" : "ちょっと遅い！");
             return;
           }
           if (results.length >= 4) end(true);
@@ -540,7 +548,7 @@
           g.after(t0 + (4 + k) * I + tol - performance.now(), () => {
             if (results.length > k) return;
             label.textContent = "おそい！";
-            end(false);
+            end(false, "ちょっと遅い！");
           });
         }
       },
@@ -631,7 +639,11 @@
           row.hidden = false;
           answering = true;
         });
-        gOnChoice(g, row, answer, () => answering);
+        const COLOR_JA = { pink: "ももいろ", sky: "みずいろ", mint: "みどり", yellow: "きいろ", orange: "だいだい", lilac: "むらさき", lime: "きみどり" };
+        const SHAPE_JA = { circle: "まる", tri: "さんかく", square: "しかく", diamond: "ひしがた", star: "ほし", down: "ぎゃくさんかく" };
+        const full = `消えたのは${COLOR_JA[info[answer].color]}${SHAPE_JA[info[answer].shape]}！`;
+        const missReason = full.length <= 14 ? full : `消えたのは${SHAPE_JA[info[answer].shape]}！`;
+        gOnChoice(withReason(g, missReason), row, answer, () => answering);
       },
     },
 
@@ -758,7 +770,11 @@
             } else {
               ball.classList.add("is-goal");
               counter.textContent = "ゴール！";
-              g.lose();
+              let why;
+              if (targets[i] === "center") why = "まん中は動かない！";
+              else if (pos === "center") why = "とびそこねた！";
+              else why = "ぎゃくにとんだ！";
+              g.lose(why);
             }
           }
         });
@@ -814,7 +830,7 @@
             yokan.classList.add("is-miss");
             result.textContent = "ようかんの外！";
             result.hidden = false;
-            g.lose();
+            g.lose("ようかんの外！");
             return;
           }
           const rel = (px - r.left) / r.width;
@@ -832,7 +848,7 @@
             g.win();
           } else {
             yokan.classList.add("is-ng");
-            g.lose();
+            g.lose(rel < frac ? "もう少し右！" : "もう少し左！");
           }
         });
       },
